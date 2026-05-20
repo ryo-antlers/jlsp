@@ -78,7 +78,7 @@ body {
    同時に上辺 (右起点) と下辺 (左起点) に細い緑のラインが描き出される。
    CodePen "Hover me!" 構成に準拠。 */
 .cta-button {
-  background: #1AAB8A;
+  background: #c7384d;
   color: #fff;
   border: none;
   position: relative;
@@ -96,7 +96,7 @@ body {
 
 .cta-button:hover {
   background: #fff;
-  color: #1AAB8A;
+  color: #c7384d;
 }
 
 .cta-button::before,
@@ -107,7 +107,7 @@ body {
   right: 0;
   height: 2px;
   width: 0;
-  background: #1AAB8A;
+  background: #c7384d;
   transition: 400ms ease all;
 }
 
