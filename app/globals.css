@@ -27,3 +27,22 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", sans-serif;
 }
+
+/* J リーグ各クラブのカラーを巡回させる、トップ見出し用のアニメーション。
+   2 秒に 1 色のペースで滑らかに切り替わる。 */
+@keyframes clubColorCycle {
+  0%    { color: #E60012; } /* 鹿島レッド */
+  12.5% { color: #FCB116; } /* 柏イエロー */
+  25%   { color: #003490; } /* 川崎ブルー */
+  37.5% { color: #00714A; } /* ヴェルディグリーン */
+  50%   { color: #582C83; } /* 京都パープル */
+  62.5% { color: #FF6600; } /* 大宮オレンジ */
+  75%   { color: #2BAAE2; } /* 湘南スカイ */
+  87.5% { color: #D8127D; } /* セレッソピンク */
+  100%  { color: #E60012; }
+}
+
+.club-color-cycle {
+  animation: clubColorCycle 16s linear infinite;
+  display: inline-block;
+}

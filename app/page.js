@@ -8,7 +8,8 @@ export default function Home() {
           JLSP
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">
-          あなたが好きになる<br />Jリーグクラブを当てる
+          あなたが好きになる<br />
+          <span className="club-color-cycle">Jリーグクラブ</span>を当てる
         </h1>
         <p className="text-sm sm:text-base text-[var(--muted)] mb-10 leading-relaxed">
           32問のシンプルな質問から、J1・J2の40クラブから<br className="hidden sm:inline" />あなたに合う TOP3 を診断します。
