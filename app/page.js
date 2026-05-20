@@ -2,10 +2,7 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center px-6 py-16 relative">
-      <div className="spine" aria-hidden="true">
-        <span className="spine-dot" />
-      </div>
+    <div className="flex flex-col flex-1 items-center justify-center px-6 py-16">
       <main className="w-full max-w-xl text-center">
         <p className="text-6xl sm:text-8xl font-black tracking-[0.12em] text-[var(--foreground)] mb-8 sm:mb-10 select-none">
           <span className="jlsp-letter">J</span>

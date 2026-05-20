@@ -28,44 +28,6 @@ body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", sans-serif;
 }
 
-/* 背景の左端に貼る縦のスパイン。
-   - 上から下に細い黒線が描画される (load 時 scaleY 0→1)
-   - 線の中央に赤い小さなドットが、上下にゆっくり往復する (6s 周期)
-   - position: fixed で画面に貼り付き、コンテンツとは独立 */
-.spine {
-  position: fixed;
-  left: clamp(24px, 5vw, 56px);
-  top: 96px;
-  bottom: 80px;
-  width: 1px;
-  background: linear-gradient(180deg, #0e0e10 0%, #0e0e10 70%, transparent 100%);
-  animation: spineGrow 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.spine-dot {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 16%;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #c7384d;
-  animation: spineDrift 6s ease-in-out 1.6s infinite;
-}
-
-@keyframes spineGrow {
-  from { transform: scaleY(0); transform-origin: top; }
-  to   { transform: scaleY(1); transform-origin: top; }
-}
-
-@keyframes spineDrift {
-  0%, 100% { top: 16%; }
-  50%      { top: 78%; }
-}
-
 /* J リーグ各クラブのカラーを巡回させる、トップ見出し用のアニメーション。
    3 秒に 1 色のペースで滑らかに切り替わる (24 秒で 1 周)。 */
 @keyframes clubColorCycle {
