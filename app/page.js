@@ -19,7 +19,7 @@ export default function Home() {
         </p>
         <Link
           href="/quiz"
-          className="cta-button inline-flex items-center justify-center rounded-full font-bold text-base sm:text-lg px-10 py-4"
+          className="cta-button rounded-full font-black text-base sm:text-lg px-9 py-4"
         >
           診断する
         </Link>

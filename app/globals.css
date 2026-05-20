@@ -74,51 +74,76 @@ body {
 .jlsp-letter:nth-child(3) { animation-delay: 0.25s; }
 .jlsp-letter:nth-child(4) { animation-delay: 0.35s; }
 
-/* CTA ボタン: 待機時は呼吸 (box-shadow パルス)、hover で持ち上がり + シマー sweep */
+/* CTA: ステッカー風に貼ってある体。傾き + 浮遊 + 3D ソリッド影で
+   「これボタン?」と二度見させる存在感を狙う。 */
 .cta-button {
   position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%);
-  background-size: 200% 100%;
+  background: #16a34a;
   color: #fff;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background-position 0.6s ease;
-  animation: ctaBreathe 3s ease-in-out infinite;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  /* sticker tilt — 不規則に揺れる ground state */
+  animation: stickerDrift 5s ease-in-out infinite;
+
+  /* 3D っぽいソリッド影 + やわらかいグロー */
+  box-shadow:
+    0 6px 0 #0e7a36,
+    0 14px 28px rgba(22, 163, 74, 0.28);
+
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease;
+
+  z-index: 1;
 }
 
+/* ホバー: アニメ停止 + 真っ直ぐに飛び出す */
 .cta-button:hover {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 14px 36px rgba(22, 163, 74, 0.5);
-  background-position: 100% 0;
+  animation-play-state: paused;
+  transform: translateY(-12px) rotate(0deg) scale(1.06);
+  box-shadow:
+    0 14px 0 #0e7a36,
+    0 28px 44px rgba(22, 163, 74, 0.45);
 }
 
+/* クリック: 押し込んで影が消える */
 .cta-button:active {
-  transform: translateY(-1px) scale(1.02);
+  transform: translateY(-1px) rotate(0deg) scale(1.02);
+  box-shadow:
+    0 2px 0 #0e7a36,
+    0 4px 8px rgba(22, 163, 74, 0.3);
+  transition: transform 0.08s, box-shadow 0.08s;
 }
 
-.cta-button::before {
+/* テキストの右にちょこっとついてくるドット 3 つ。
+   "..." みたいでちょっと考えてる感が出る。 */
+.cta-button::after {
   content: '';
-  position: absolute;
-  top: 0;
-  left: -75%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
-  transform: skewX(-20deg);
-  transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  pointer-events: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-left: 4px;
+  box-shadow:
+    10px 0 0 currentColor,
+    20px 0 0 currentColor;
+  opacity: 0.85;
+  animation: ctaDots 1.4s ease-in-out infinite;
 }
 
-.cta-button:hover::before {
-  left: 125%;
+@keyframes stickerDrift {
+  0%   { transform: rotate(-2deg) translateY(0); }
+  20%  { transform: rotate(1.5deg)  translateY(-4px); }
+  45%  { transform: rotate(-3deg) translateY(-2px); }
+  65%  { transform: rotate(2deg)  translateY(-6px); }
+  85%  { transform: rotate(-1deg) translateY(-3px); }
+  100% { transform: rotate(-2deg) translateY(0); }
 }
 
-@keyframes ctaBreathe {
-  0%, 100% {
-    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28),
-                0 0 0 0 rgba(22, 163, 74, 0.35);
-  }
-  50% {
-    box-shadow: 0 8px 22px rgba(22, 163, 74, 0.4),
-                0 0 0 8px rgba(22, 163, 74, 0);
-  }
+@keyframes ctaDots {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
 }
