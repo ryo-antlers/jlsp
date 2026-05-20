@@ -7,13 +7,27 @@ export default function Home() {
         <p className="text-xs font-mono tracking-[0.3em] text-[var(--muted)] mb-6">
           JLSP
         </p>
-        <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">
-          あなたが好きになる<br />
-          <span className="club-color-cycle">Jリーグクラブ</span>を当てる
+        <h1 className="text-3xl sm:text-5xl font-black leading-[1.25] mb-6 tracking-tight">
+          自分の国にも、<br />
+          <span className="club-color-cycle">自分のクラブ</span>が<br />
+          きっとある。
         </h1>
-        <p className="text-sm sm:text-base text-[var(--muted)] mb-10 leading-relaxed">
-          32問のシンプルな質問から、J1・J2の40クラブから<br className="hidden sm:inline" />あなたに合う TOP3 を診断します。
-        </p>
+        <div className="text-sm sm:text-base text-[var(--muted)] mb-10 leading-relaxed space-y-4">
+          <p>
+            W杯や海外サッカーで目覚めたサッカー熱、<br className="hidden sm:inline" />
+            次は J リーグでも。
+          </p>
+          <p>
+            でも、20 を超えるクラブから<br className="hidden sm:inline" />
+            どこを応援すればいいか、<br className="hidden sm:inline" />
+            意外と決められないものです。
+          </p>
+          <p>
+            48 問の質問にサクッと答えるだけで、<br className="hidden sm:inline" />
+            J1・J2 の 40 クラブから、<br className="hidden sm:inline" />
+            あなたが好きになるはずの TOP3 をご提案します。
+          </p>
+        </div>
         <Link
           href="/quiz"
           className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold text-base sm:text-lg px-10 py-4 transition-colors shadow-sm hover:shadow"
