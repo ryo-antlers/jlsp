@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { QUESTIONS } from '@/lib/jlsp/questions'
 import { encodeAnswers, matchClubs } from '@/lib/jlsp/diagnose'
@@ -19,7 +20,7 @@ const STEPS = [
 
 const CENTER_INDEX = 3
 
-// 反対側=オレンジ、中央=グレー、賛成側=緑 (ポップ感)
+// 反対側=オレンジ、中央=グレー、賛成側=緑
 const STEP_COLORS = ['#f97316', '#fb923c', '#fdba74', '#9ca3af', '#86efac', '#4ade80', '#22c55e']
 const STEP_BORDER_COLORS = [
   'rgba(249, 115, 22, 0.45)',
@@ -41,18 +42,18 @@ const STEP_SIZE = [
   'w-10 h-10 sm:w-12 sm:h-12',
 ]
 
-function LikertRow({ index, question, selected, onSelect }) {
+function LikertRow({ qLabel, question, selected, onSelect }) {
   return (
-    <div className="py-3 sm:py-4">
-      <div className="flex items-baseline gap-3 mb-6 sm:mb-8">
-        <span className="text-xs text-[var(--muted)] font-mono shrink-0">Q{index}</span>
-        <p className="text-sm sm:text-base font-semibold leading-relaxed text-[var(--foreground)]">
-          {question.statement}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 sm:gap-3 select-none">
-        <span className="text-[10px] sm:text-xs font-semibold text-[var(--muted)] shrink-0">反対</span>
-        <div className="flex items-center flex-1 justify-between" style={{ gap: '14px' }}>
+    <div>
+      <p className="text-[10px] sm:text-xs font-mono tracking-[0.2em] text-[var(--muted)] mb-3">
+        {qLabel}
+      </p>
+      <p className="text-base sm:text-xl font-bold leading-[1.65] text-[var(--foreground)] mb-7 sm:mb-9">
+        {question.statement}
+      </p>
+      <div className="flex items-center gap-3 select-none">
+        <span className="text-[10px] sm:text-xs font-mono tracking-[0.15em] text-[var(--muted)] shrink-0 w-10 text-right">反対</span>
+        <div className="flex items-center flex-1 justify-between" style={{ gap: '12px' }}>
           {STEPS.map((s, i) => {
             const selectedIdx = selected !== undefined ? STEPS.findIndex((x) => x.value === selected) : -1
             let isFilled = false
@@ -80,7 +81,7 @@ function LikertRow({ index, question, selected, onSelect }) {
             )
           })}
         </div>
-        <span className="text-[10px] sm:text-xs font-semibold text-[var(--muted)] shrink-0">賛成</span>
+        <span className="text-[10px] sm:text-xs font-mono tracking-[0.15em] text-[var(--muted)] shrink-0 w-10 text-left">賛成</span>
       </div>
     </div>
   )
@@ -105,8 +106,9 @@ export default function QuizPage() {
   const answeredOnPage = currentPage.every((q) => answers.has(q.id))
   const isLastPage = pageIndex === totalPages - 1
   const startQ = pageIndex * QUESTIONS_PER_PAGE + 1
-  const endQ = startQ + currentPage.length - 1
   const progress = Math.round((answers.size / QUESTIONS.length) * 100)
+  const isWarmup = currentPage[0]?.id.startsWith('w')
+  const roundLabel = isWarmup ? 'WARM-UP' : 'SOCCER'
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -140,63 +142,73 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl w-full px-5 sm:px-6 py-8">
+    <div className="min-h-screen flex flex-col w-full">
       <div ref={topRef} />
 
-      <div className="mb-6">
-        <div className="flex justify-between text-xs text-[var(--muted)] mb-2">
-          <span>Q{startQ}–{endQ} / {QUESTIONS.length}</span>
-          <span>{pageIndex + 1} / {totalPages} ページ</span>
+      <header className="border-b border-[var(--border)]">
+        <div className="max-w-3xl mx-auto w-full px-6 py-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="font-mono text-xs sm:text-sm tracking-[0.3em] font-black hover:opacity-60 transition-opacity"
+          >
+            JLSP
+          </Link>
+          <span className="font-mono text-[10px] sm:text-xs tracking-[0.18em] text-[var(--muted)]">
+            {String(pageIndex + 1).padStart(2, '0')} / {String(totalPages).padStart(2, '0')}
+          </span>
         </div>
-        <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
-          <div
-            className="h-full transition-all"
-            style={{ width: `${progress}%`, backgroundColor: 'var(--accent)' }}
-          />
+        <div className="max-w-3xl mx-auto w-full px-6">
+          <div className="h-px bg-[var(--border)] relative -mb-px">
+            <div
+              className="absolute top-0 left-0 transition-all duration-500"
+              style={{ width: `${progress}%`, height: 2, backgroundColor: '#c7384d' }}
+            />
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="space-y-6 sm:space-y-7 bg-[var(--card)] rounded-2xl border border-[var(--border)] px-5 sm:px-7 py-6 sm:py-8 shadow-sm">
-        {currentPage.map((q, i) => (
-          <LikertRow
-            key={q.id}
-            index={startQ + i}
-            question={q}
-            selected={answers.get(q.id)}
-            onSelect={(step) => setAnswer(q.id, step)}
-          />
-        ))}
-      </div>
-
-      <div className="mt-8 flex justify-between items-center">
-        <button
-          type="button"
-          onClick={goBack}
-          disabled={pageIndex === 0}
-          className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          ← 前のページ
-        </button>
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={!answeredOnPage}
-          style={
-            answeredOnPage
-              ? { backgroundColor: 'var(--accent)', color: '#fff' }
-              : { backgroundColor: '#e5e5e5', color: '#a1a1aa' }
-          }
-          className="inline-flex items-center justify-center rounded-full font-bold px-7 py-3 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
-        >
-          {isLastPage ? '結果を見る →' : '次のページ →'}
-        </button>
-      </div>
-
-      {!answeredOnPage && (
-        <p className="mt-3 text-right text-xs text-[var(--muted)]">
-          このページの {currentPage.length} 問すべてに回答してください
+      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-10 sm:py-14">
+        <p className="text-[10px] sm:text-xs font-mono tracking-[0.3em] text-[var(--muted)] mb-10 sm:mb-14">
+          ROUND {String(pageIndex + 1).padStart(2, '0')} <span className="mx-2 opacity-50">—</span> {roundLabel}
         </p>
-      )}
+
+        <div className="space-y-12 sm:space-y-16">
+          {currentPage.map((q, i) => (
+            <LikertRow
+              key={q.id}
+              qLabel={`Q${String(startQ + i).padStart(2, '0')} / ${String(QUESTIONS.length).padStart(2, '0')}`}
+              question={q}
+              selected={answers.get(q.id)}
+              onSelect={(step) => setAnswer(q.id, step)}
+            />
+          ))}
+        </div>
+
+        <div className="mt-16 sm:mt-20 flex justify-between items-center gap-4">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={pageIndex === 0}
+            className="font-mono text-xs sm:text-sm tracking-[0.15em] text-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            ← 戻る
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!answeredOnPage}
+            className="cta-button cta-button-sm"
+          >
+            {isLastPage ? '結果を見る' : '次へ'}
+          </button>
+        </div>
+
+        {!answeredOnPage && (
+          <p className="mt-4 text-right text-[10px] sm:text-xs font-mono text-[var(--muted)]">
+            このページの {currentPage.length} 問すべてに回答してください
+          </p>
+        )}
+      </main>
     </div>
   )
 }

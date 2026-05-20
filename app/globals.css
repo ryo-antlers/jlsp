@@ -123,3 +123,25 @@ body {
   width: 100%;
   transition: 800ms ease all;
 }
+
+/* quiz ページ用のサイズ控えめ variant + disabled 状態 */
+.cta-button-sm {
+  height: 52px;
+  font-size: 1.15rem;
+  padding: 0 1.6em;
+}
+
+.cta-button:disabled,
+.cta-button[disabled] {
+  background: #e5e5e5 !important;
+  color: #a1a1aa !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.cta-button:disabled::before,
+.cta-button:disabled::after,
+.cta-button[disabled]::before,
+.cta-button[disabled]::after {
+  display: none !important;
+}
