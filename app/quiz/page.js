@@ -44,14 +44,14 @@ const STEP_SIZE = [
 
 function LikertRow({ qLabel, question, selected, onSelect }) {
   return (
-    <div>
+    <div className="pt-10 sm:pt-14 border-t border-[var(--border)] first:pt-0 first:border-t-0">
       <p className="text-[10px] sm:text-xs font-mono tracking-[0.2em] text-[var(--muted)] mb-3">
         {qLabel}
       </p>
       <p className="text-base sm:text-xl font-bold leading-[1.65] text-[var(--foreground)] mb-7 sm:mb-9">
         {question.statement}
       </p>
-      <div className="flex items-center gap-3 select-none">
+      <div className="flex items-center gap-3 select-none max-w-md mx-auto pb-10 sm:pb-14">
         <span className="text-[10px] sm:text-xs font-mono tracking-[0.15em] text-[var(--muted)] shrink-0 w-10 text-right">反対</span>
         <div className="flex items-center flex-1 justify-between" style={{ gap: '12px' }}>
           {STEPS.map((s, i) => {
@@ -172,7 +172,7 @@ export default function QuizPage() {
           ROUND {String(pageIndex + 1).padStart(2, '0')} <span className="mx-2 opacity-50">—</span> {roundLabel}
         </p>
 
-        <div className="space-y-12 sm:space-y-16">
+        <div>
           {currentPage.map((q, i) => (
             <LikertRow
               key={q.id}
@@ -184,7 +184,7 @@ export default function QuizPage() {
           ))}
         </div>
 
-        <div className="mt-16 sm:mt-20 flex justify-between items-center gap-4">
+        <div className="mt-6 sm:mt-8 pt-8 sm:pt-10 border-t border-[var(--border)] flex justify-between items-center gap-4">
           <button
             type="button"
             onClick={goBack}
