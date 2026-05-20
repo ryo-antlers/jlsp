@@ -77,19 +77,19 @@ export default async function ResultPage({ params, searchParams }) {
           <p className="text-[10px] sm:text-xs font-mono tracking-[0.3em] text-[var(--muted)] mb-6">
             #01 <span className="mx-2 opacity-50">—</span> YOUR CLUB
           </p>
-          <div className="flex items-stretch gap-4 sm:gap-5 mb-6">
+          <div className="flex items-center gap-4 sm:gap-5 mb-6">
             <span
-              className="w-1.5 sm:w-2 rounded-full shrink-0"
+              className="w-1 sm:w-1.5 self-stretch rounded-full shrink-0"
               style={{ backgroundColor: top1.club.color }}
               aria-hidden="true"
             />
-            <h1 className="text-4xl sm:text-6xl font-black leading-[1.05] tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-bold leading-[1.15] tracking-tight">
               {top1.club.name}
             </h1>
           </div>
           <div className="flex items-baseline gap-3 mb-7">
             <span
-              className="text-4xl sm:text-6xl font-black tabular-nums"
+              className="text-3xl sm:text-5xl font-bold tabular-nums"
               style={{ color: top1.club.color }}
             >
               {pct(top1.score)}
