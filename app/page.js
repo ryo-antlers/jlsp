@@ -17,10 +17,7 @@ export default function Home() {
           W杯や海外サッカーで目覚めたサッカー熱、<br className="hidden sm:inline" />
           次は J リーグでも。
         </p>
-        <Link
-          href="/quiz"
-          className="cta-button text-base sm:text-lg px-10 py-5 rounded"
-        >
+        <Link href="/quiz" className="cta-button">
           診断する
         </Link>
         <p className="mt-16 text-[10px] text-[var(--muted)] leading-relaxed">

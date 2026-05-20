@@ -74,37 +74,53 @@ body {
 .jlsp-letter:nth-child(3) { animation-delay: 0.25s; }
 .jlsp-letter:nth-child(4) { animation-delay: 0.35s; }
 
-/* CTA: CodePen "fun-btn" を踏襲。サーモンの矩形ボタン、ホバーで
-   hue-rotate で色が虹色に駆け抜けつつ、不規則な拍で脈打って大きくなる。 */
+/* CTA: 緑塗りの矩形ボタン。ホバーで色が反転 (緑→白背景・白→緑文字) し、
+   上辺(右→左)と下辺(左→右)に細い緑のラインが 800ms かけて描かれる。 */
 .cta-button {
-  background-color: salmon;
+  background: #1AAB8A;
   color: #fff;
-  text-decoration: none;
-  display: inline-block;
-  cursor: pointer;
   border: none;
-  letter-spacing: 0.15em;
-  font-weight: 900;
-  transition: all 0.3s ease;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 2em;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  transition: 800ms ease all;
 }
 
 .cta-button:hover {
-  animation:
-    ctaHueRotate 0.5s linear infinite,
-    ctaGrow 1.3s ease infinite;
+  background: #fff;
+  color: #1AAB8A;
 }
 
-/* 色相回転で salmon → 全色サイクル */
-@keyframes ctaHueRotate {
-  from { filter: hue-rotate(0deg); }
-  to   { filter: hue-rotate(360deg); }
+.cta-button::before,
+.cta-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 2px;
+  width: 0;
+  background: #1AAB8A;
+  transition: 400ms ease all;
 }
 
-/* 拍動: 不規則なリズムで scale 1.0 ↔ 1.3 を行き来 */
-@keyframes ctaGrow {
-  0%   { transform: scale(1); }
-  14%  { transform: scale(1.3); }
-  28%  { transform: scale(1); }
-  42%  { transform: scale(1.3); }
-  70%  { transform: scale(1); }
+.cta-button::after {
+  right: inherit;
+  top: inherit;
+  left: 0;
+  bottom: 0;
+}
+
+.cta-button:hover::before,
+.cta-button:hover::after {
+  width: 100%;
+  transition: 800ms ease all;
 }
