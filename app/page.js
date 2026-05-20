@@ -2,8 +2,13 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center px-6 py-16">
-      <main className="w-full max-w-xl text-center">
+    <div className="flex flex-col flex-1 items-center justify-center px-6 py-16 relative">
+      <div className="aurora" aria-hidden="true">
+        <div className="aurora-blob blob-1" />
+        <div className="aurora-blob blob-2" />
+        <div className="aurora-blob blob-3" />
+      </div>
+      <main className="w-full max-w-xl text-center relative z-10">
         <p className="text-6xl sm:text-8xl font-black tracking-[0.12em] text-[var(--foreground)] mb-8 sm:mb-10 select-none">
           <span className="jlsp-letter">J</span>
           <span className="jlsp-letter">L</span>
