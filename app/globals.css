@@ -74,77 +74,51 @@ body {
 .jlsp-letter:nth-child(3) { animation-delay: 0.25s; }
 .jlsp-letter:nth-child(4) { animation-delay: 0.35s; }
 
-/* CTA: ボタンというより「→ 次へ」的なテキストリンク。背景塗りや角丸を
-   一切持たず、文字 + 細い下線 + 矢印で構成。
-   - 待機: 下線は 70% 幅 + 薄め、矢印がゆっくり前後にドリフト (生きてる感)
-   - ホバー: 下線が右まで描き切られ濃くなる、矢印がスッと前に出る、
-            文字間が広がって「呼吸する」感じ */
+/* CTA: 緑塗り矩形ボタン、ホバーで色反転 + 上下辺に細いラインが描き出される。
+   参考 CodePen の "Hover me!" 構成をそのまま採用。 */
 .cta-button {
+  background: #1AAB8A;
+  color: #fff;
+  border: none;
   position: relative;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.7em;
-
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-
-  color: var(--foreground);
-  text-decoration: none;
-  padding: 4px 4px 10px 4px;
-
+  height: 60px;
+  font-size: 1.6em;
+  padding: 0 2em;
   cursor: pointer;
-  transition: letter-spacing 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              color 0.3s ease;
-}
-
-@media (min-width: 640px) {
-  .cta-button {
-    font-size: 1.6rem;
-  }
-}
-
-/* 下線: 待機は右側 30% 欠けた状態、ホバーで右端まで伸びる */
-.cta-button::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  right: calc(30% + 4px);
-  bottom: 2px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.3;
-  transition: right 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.4s ease,
-              height 0.4s ease;
-}
-
-.cta-button:hover::before {
-  right: 4px;
-  opacity: 1;
-  height: 2px;
-}
-
-/* 矢印: 待機は微ドリフト、ホバーでスッと前に出る */
-.cta-button::after {
-  content: '→';
-  display: inline-block;
-  font-weight: 300;
-  font-size: 0.95em;
-  animation: ctaArrowIdle 2.6s ease-in-out infinite;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: 800ms ease all;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  font-weight: 700;
 }
 
 .cta-button:hover {
-  letter-spacing: 0.08em;
+  background: #fff;
+  color: #1AAB8A;
 }
 
+.cta-button::before,
+.cta-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 2px;
+  width: 0;
+  background: #1AAB8A;
+  transition: 400ms ease all;
+}
+
+.cta-button::after {
+  right: inherit;
+  top: inherit;
+  left: 0;
+  bottom: 0;
+}
+
+.cta-button:hover::before,
 .cta-button:hover::after {
-  animation: none;
-  transform: translateX(14px);
-}
-
-@keyframes ctaArrowIdle {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(5px); }
+  width: 100%;
+  transition: 800ms ease all;
 }
