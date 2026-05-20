@@ -51,7 +51,7 @@ function LikertRow({ qLabel, question, selected, onSelect }) {
       <p className="text-base sm:text-xl font-bold leading-[1.65] text-[var(--foreground)] mb-7 sm:mb-9">
         {question.statement}
       </p>
-      <div className="flex items-center gap-3 select-none max-w-md mx-auto pb-10 sm:pb-14">
+      <div className="flex items-center gap-3 select-none max-w-md pb-10 sm:pb-14">
         <span className="text-[10px] sm:text-xs font-mono tracking-[0.15em] text-[var(--muted)] shrink-0 w-10 text-right">反対</span>
         <div className="flex items-center flex-1 justify-between" style={{ gap: '12px' }}>
           {STEPS.map((s, i) => {
