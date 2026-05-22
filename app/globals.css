@@ -181,23 +181,23 @@ body {
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* TYPE MAP radar polygon: 中心からスケールアップ */
-.dsRB-radar-poly {
-  transform-origin: 0 0;
-  transform-box: view-box;
-  animation: dsRB-radar-scale 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0.4s) backwards;
+/* TYPE MAP — Parallel Coordinates 折れ線 draw-in + 頂点 pop-in */
+.dsRB-pc-line {
+  stroke-dasharray: 320;
+  stroke-dashoffset: 320;
+  animation: dsRB-pc-draw 1.2s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0.4s) backwards;
 }
-@keyframes dsRB-radar-scale {
-  from { opacity: 0; transform: scale(0); }
-  to   { opacity: 1; transform: scale(1); }
+@keyframes dsRB-pc-draw {
+  from { stroke-dashoffset: 320; opacity: 0; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
 }
 
-.dsRB-radar-vertex {
+.dsRB-pc-dot {
   transform-origin: center;
   transform-box: fill-box;
-  animation: dsRB-radar-vertex 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay, 0.7s) backwards;
+  animation: dsRB-pc-dot 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay, 0.6s) backwards;
 }
-@keyframes dsRB-radar-vertex {
+@keyframes dsRB-pc-dot {
   from { opacity: 0; transform: scale(0); }
   to   { opacity: 1; transform: scale(1); }
 }

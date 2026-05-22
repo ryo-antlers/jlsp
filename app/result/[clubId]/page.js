@@ -18,9 +18,109 @@ function parseSightseeing(s) {
 }
 
 /**
- * 4軸を 1 枚に統合した radar chart。蜘蛛の巣 4 スポーク (0°/45°/90°/135°)、
- * 各スポークの両端が axis の正極/負極。ユーザーとクラブの 4 点を結ぶ多角形が
- * 重なるほど相性◎。
+ * Parallel Coordinates: 4 軸を縦に並べた折れ線。S-curve でなめらかに繋ぐ。
+ * 1.4px → 0.7px の細線、洗練されたデータ可視化。
+ */
+function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
+  const AXES_DEF = [
+    { id: 'shoubu',  posLetter: 'R', negLetter: 'E', label: '勝負' },
+    { id: 'keiei',   posLetter: 'W', negLetter: 'H', label: '経営' },
+    { id: 'kansen',  posLetter: 'U', negLetter: 'A', label: '観戦' },
+    { id: 'kanshin', posLetter: 'O', negLetter: 'F', label: '関心' },
+  ]
+  const clamp = (v) => Math.max(-1, Math.min(1, v))
+  const VB_W = 200, VB_H = 110
+  const xs = [25, 75, 125, 175]
+  const yTop = 24, yBottom = 86
+  const yCenter = (yTop + yBottom) / 2
+  const halfH = (yBottom - yTop) / 2
+
+  const userYs = AXES_DEF.map((a) => yCenter - clamp(userVector[a.id] / 18) * halfH)
+  const clubYs = AXES_DEF.map((a) => yCenter - clamp(clubVector[a.id] / 2) * halfH)
+
+  function smoothPath(ys) {
+    let d = `M ${xs[0]} ${ys[0]}`
+    for (let i = 1; i < xs.length; i++) {
+      const midX = (xs[i - 1] + xs[i]) / 2
+      d += ` C ${midX},${ys[i - 1]} ${midX},${ys[i]} ${xs[i]},${ys[i]}`
+    }
+    return d
+  }
+
+  return (
+    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full h-auto block">
+      {/* 中央 0 線 (薄い破線) */}
+      <line
+        x1={xs[0] - 4} y1={yCenter} x2={xs[xs.length - 1] + 4} y2={yCenter}
+        stroke="#0e0e10" strokeOpacity="0.08" strokeWidth="0.3" strokeDasharray="0.6 1.4"
+      />
+
+      {/* 4 軸 */}
+      {xs.map((x, i) => (
+        <g key={i}>
+          <line x1={x} y1={yTop} x2={x} y2={yBottom} stroke="#0e0e10" strokeOpacity="0.22" strokeWidth="0.3" />
+          {/* 微細ティック (±0.25 / ±0.5 / ±0.75) */}
+          {[0.25, 0.5, 0.75].map((t) => (
+            <g key={t}>
+              <line x1={x - 1} y1={yCenter - halfH * t} x2={x + 1} y2={yCenter - halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
+              <line x1={x - 1} y1={yCenter + halfH * t} x2={x + 1} y2={yCenter + halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
+            </g>
+          ))}
+          {/* axis label */}
+          <text x={x} y={yTop - 10} fontSize="3.8" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.18em">{AXES_DEF[i].label}</text>
+          <text x={x} y={yTop - 2.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.92" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].posLetter}</text>
+          <text x={x} y={yBottom + 7.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].negLetter}</text>
+        </g>
+      ))}
+
+      {/* club path (背面) */}
+      <path
+        d={smoothPath(clubYs)}
+        fill="none"
+        stroke={clubColor}
+        strokeWidth="0.85"
+        strokeOpacity="0.95"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="dsRB-pc-line"
+        style={{ '--delay': `${animDelay + 0.1}s` }}
+      />
+      {clubYs.map((y, i) => (
+        <circle
+          key={`c${i}`}
+          cx={xs[i]} cy={y} r="1.5"
+          fill={clubColor} stroke="#fafaf7" strokeWidth="0.45"
+          className="dsRB-pc-dot"
+          style={{ '--delay': `${animDelay + 0.4 + i * 0.05}s` }}
+        />
+      ))}
+
+      {/* user path */}
+      <path
+        d={smoothPath(userYs)}
+        fill="none"
+        stroke="#0e0e10"
+        strokeWidth="0.85"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="dsRB-pc-line"
+        style={{ '--delay': `${animDelay + 0.35}s` }}
+      />
+      {userYs.map((y, i) => (
+        <circle
+          key={`u${i}`}
+          cx={xs[i]} cy={y} r="1.3"
+          fill="#0e0e10" stroke="#fafaf7" strokeWidth="0.45"
+          className="dsRB-pc-dot"
+          style={{ '--delay': `${animDelay + 0.65 + i * 0.05}s` }}
+        />
+      ))}
+    </svg>
+  )
+}
+
+/**
+ * 4軸を 1 枚に統合した radar chart (旧). 残置 — 必要時に切替可能。
  */
 function RadarPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
   const R = 44
@@ -215,25 +315,24 @@ export default async function ResultPage({ params, searchParams }) {
           )}
           <div className="dsRB-fade space-y-4" style={{ '--d': '0.2s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TYPE MAP</p>
-            <RadarPlot
+            <ParallelPlot
               userVector={userVector}
               clubVector={top1.club.vector}
               clubColor={clubColor}
               animDelay={0.35}
             />
-            <div className="flex gap-3 text-[10px] font-mono text-zinc-500">
+            <div className="flex gap-3 text-[10px] font-mono text-zinc-500 pt-1">
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#0e0e10]" />
+                <span className="inline-block w-3 h-px bg-[#0e0e10]" />
                 you
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: clubColor }} />
+                <span className="inline-block w-3 h-px" style={{ backgroundColor: clubColor }} />
                 {top1.club.name}
               </span>
             </div>
             <p className="text-[10px] font-mono text-zinc-400 leading-relaxed">
-              4軸の位置を 1 枚に。形が重なるほど相性◎。<br />
-              外側 = 正極 (R / W / U / O) / 反対側 = 負極。
+              4 軸を縦に並べて折れ線で比較。上 = 正極、下 = 負極。
             </p>
           </div>
         </aside>
