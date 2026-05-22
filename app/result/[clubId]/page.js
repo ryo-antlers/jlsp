@@ -608,6 +608,8 @@ export default async function ResultPage({ params, searchParams }) {
               typeCode={userTypeCode}
               typeNickname={userType?.nickname}
               clubName={top1.club.name}
+              clubId={top1.club.id}
+              encodedAnswers={a}
             />
             <Link href="/quiz" className="cta-button">もう一度診断する</Link>
           </div>

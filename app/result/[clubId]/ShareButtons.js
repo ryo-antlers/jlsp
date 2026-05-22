@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-export default function ShareButtons({ typeCode, typeNickname, clubName }) {
+export default function ShareButtons({ typeCode, typeNickname, clubName, clubId, encodedAnswers }) {
   const [pageUrl, setPageUrl] = useState('')
 
   useEffect(() => {
@@ -19,6 +19,9 @@ export default function ShareButtons({ typeCode, typeNickname, clubName }) {
   const lineUrl = pageUrl
     ? `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(text)}`
     : '#'
+  const storyUrl = clubId
+    ? `/api/og/story/${clubId}${encodedAnswers ? `?a=${encodedAnswers}` : ''}`
+    : null
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
@@ -40,6 +43,17 @@ export default function ShareButtons({ typeCode, typeNickname, clubName }) {
       >
         <span>LINE</span>
       </a>
+      {storyUrl && (
+        <a
+          href={storyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#feda75] via-[#d62976] to-[#4f5bd5] hover:opacity-80 text-white font-bold px-4 py-2 text-xs sm:text-sm transition-opacity"
+          title="9:16 ストーリー画像 (Instagram 用)"
+        >
+          <span>ストーリー画像</span>
+        </a>
+      )}
     </div>
   )
 }
