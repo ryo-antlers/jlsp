@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { loadResultData } from '@/lib/jlsp/result-page-data'
 import { TYPE_META } from '@/lib/jlsp/type-meta'
 import { CLUB_META } from '@/lib/jlsp/club-meta'
-import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players'
+import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import ShareButtons from './ShareButtons'
@@ -165,11 +165,15 @@ export default async function ResultPage({ params, searchParams }) {
   const a = typeof sp.a === 'string' ? sp.a : null
   const data = await loadResultData({ clubId, a })
   if (!data) notFound()
-  const { top1, top3, worst3, detail, userType, userTypeCode, userVector, teamId } = data
+  const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, userType, userTypeCode, userVector, teamId } = data
   const clubColor = top1.club.color
   const clubMeta = CLUB_META[top1.club.id] ?? {}
   const alumni = NOTABLE_ALUMNI[top1.club.id] ?? []
-  const overseas = OVERSEAS_PLAYERS[top1.club.id] ?? []
+  // DB に海外組データがあれば DB を信頼 (per-club 空 = 真に海外組ゼロ)。
+  // DB 全体が空 (= migration 未適用 / 初回 sync 待ち) のときだけ静的 fallback。
+  const overseas = overseasDataAvailable
+    ? overseasPlayers
+    : (OVERSEAS_PLAYERS[top1.club.id] ?? [])
   // SIGHTSEEING_SPOTS (6 件) を優先、未登録クラブは clubs.js の sightseeing (2 件) に fallback。
   const sightseeing =
     SIGHTSEEING_SPOTS[top1.club.id] ?? parseSightseeing(top1.club.sightseeing)
