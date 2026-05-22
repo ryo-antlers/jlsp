@@ -18,74 +18,109 @@ function parseSightseeing(s) {
 }
 
 /**
- * 2軸の十字プロット (SVG)。-1..1 に正規化した userX/Y と clubX/Y を受け取り、
- * 中心 0 起点の 4 象限に点を打つ。
+ * 4軸を 1 枚に統合した radar chart。蜘蛛の巣 4 スポーク (0°/45°/90°/135°)、
+ * 各スポークの両端が axis の正極/負極。ユーザーとクラブの 4 点を結ぶ多角形が
+ * 重なるほど相性◎。
  */
-function CrossPlot({ title, xPos, xNeg, yPos, yNeg, userX, userY, clubX, clubY, clubColor, animDelay = 0.4 }) {
+function RadarPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
+  const R = 44
+  // 数学角度 (反時計) 基準: 0=右(R), 45=右上(U), 90=上(W), 135=左上(O)
+  const AXES_DEF = [
+    { id: 'shoubu',  angle: 0,   posLetter: 'R', negLetter: 'E' },
+    { id: 'kansen',  angle: 45,  posLetter: 'U', negLetter: 'A' },
+    { id: 'keiei',   angle: 90,  posLetter: 'W', negLetter: 'H' },
+    { id: 'kanshin', angle: 135, posLetter: 'O', negLetter: 'F' },
+  ]
   const clamp = (v) => Math.max(-1, Math.min(1, v))
-  const SCALE = 38
-  const ux = 50 + clamp(userX) * SCALE
-  const uy = 50 - clamp(userY) * SCALE
-  const cx = 50 + clamp(clubX) * SCALE
-  const cy = 50 - clamp(clubY) * SCALE
+  function pointOf(score, baseAngle) {
+    const s = clamp(score)
+    const actualAngle = s >= 0 ? baseAngle : baseAngle + 180
+    const dist = Math.abs(s) * R
+    const rad = (actualAngle * Math.PI) / 180
+    return { x: dist * Math.cos(rad), y: -dist * Math.sin(rad) }
+  }
+  function polyStr(pts) {
+    // 中心からの角度で時計回りに並べてポリゴンが綺麗に閉じるようにする
+    const sorted = [...pts].sort((a, b) => Math.atan2(-a.y, a.x) - Math.atan2(-b.y, b.x))
+    return sorted.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')
+  }
+
+  const userPts = AXES_DEF.map((a) => pointOf(userVector[a.id] / 18, a.angle))
+  const clubPts = AXES_DEF.map((a) => pointOf(clubVector[a.id] / 2, a.angle))
 
   return (
-    <div>
-      <p className="text-[10px] font-mono tracking-[0.18em] text-zinc-400 mb-1.5">{title}</p>
-      <div className="relative">
-        <svg viewBox="0 0 100 100" className="w-full h-auto block">
-          {/* tick marks at quarter points */}
-          {[18, 32, 68, 82].map((p) => (
-            <g key={p}>
-              <line x1={p} y1="49" x2={p} y2="51" stroke="#0e0e10" strokeOpacity="0.18" strokeWidth="0.35" />
-              <line x1="49" y1={p} x2="51" y2={p} stroke="#0e0e10" strokeOpacity="0.18" strokeWidth="0.35" />
-            </g>
-          ))}
-          {/* axes */}
-          <line x1="8" y1="50" x2="92" y2="50" stroke="#0e0e10" strokeOpacity="0.35" strokeWidth="0.5" />
-          <line x1="50" y1="8" x2="50" y2="92" stroke="#0e0e10" strokeOpacity="0.35" strokeWidth="0.5" />
-          {/* arrow heads */}
-          <polygon points="92,50 88,48 88,52" fill="#0e0e10" fillOpacity="0.35" />
-          <polygon points="8,50 12,48 12,52" fill="#0e0e10" fillOpacity="0.35" />
-          <polygon points="50,8 48,12 52,12" fill="#0e0e10" fillOpacity="0.35" />
-          <polygon points="50,92 48,88 52,88" fill="#0e0e10" fillOpacity="0.35" />
-          {/* axis letters (大きな極ラベル) */}
-          <text x="96" y="52.5" fontSize="6" textAnchor="end" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{xPos.letter}</text>
-          <text x="4" y="52.5" fontSize="6" textAnchor="start" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{xNeg.letter}</text>
-          <text x="50" y="6" fontSize="6" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{yPos.letter}</text>
-          <text x="50" y="98" fontSize="6" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{yNeg.letter}</text>
-          {/* club dot (背景に出るよう先に描画) */}
-          <circle
-            cx={cx}
-            cy={cy}
-            r="4"
-            fill={clubColor}
-            stroke="#fafaf7"
-            strokeWidth="1.2"
-            className="dsRB-cross-club"
-            style={{ '--delay': `${animDelay + 0.15}s` }}
-          />
-          {/* connecting line (user → club) */}
+    <svg viewBox="-58 -58 116 116" className="w-full h-auto block">
+      {/* 同心円リング (4段) */}
+      {[11, 22, 33, 44].map((r) => (
+        <circle key={r} cx="0" cy="0" r={r} fill="none" stroke="#0e0e10" strokeOpacity="0.07" strokeWidth="0.35" />
+      ))}
+      {/* 4 スポーク (両端まで) */}
+      {AXES_DEF.map((a) => {
+        const rad = (a.angle * Math.PI) / 180
+        const x = R * Math.cos(rad)
+        const y = -R * Math.sin(rad)
+        return (
           <line
-            x1={ux} y1={uy} x2={cx} y2={cy}
-            stroke="#0e0e10" strokeOpacity="0.2" strokeWidth="0.35" strokeDasharray="1.5 1.5"
-            className="dsRB-cross-line"
-            style={{ '--delay': `${animDelay + 0.3}s` }}
+            key={a.id}
+            x1={-x} y1={-y} x2={x} y2={y}
+            stroke="#0e0e10" strokeOpacity="0.18" strokeWidth="0.4"
           />
-          {/* user dot */}
-          <circle
-            cx={ux}
-            cy={uy}
-            r="3.5"
-            fill="#0e0e10"
-            stroke="#fafaf7"
-            strokeWidth="1.2"
-            className="dsRB-cross-user"
-            style={{ '--delay': `${animDelay}s` }}
-          />
-        </svg>
-      </div>
-    </div>
+        )
+      })}
+      {/* 8 極ラベル */}
+      {AXES_DEF.flatMap((a) => {
+        const rad = (a.angle * Math.PI) / 180
+        const lx = 52 * Math.cos(rad)
+        const ly = -52 * Math.sin(rad)
+        return [
+          <text key={`${a.id}+`} x={lx} y={ly + 2} fontSize="7" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{a.posLetter}</text>,
+          <text key={`${a.id}-`} x={-lx} y={-ly + 2} fontSize="7" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.5" fontFamily="var(--font-geist-mono), monospace">{a.negLetter}</text>,
+        ]
+      })}
+      {/* クラブのポリゴン (背面) */}
+      <polygon
+        points={polyStr(clubPts)}
+        fill={clubColor}
+        fillOpacity="0.22"
+        stroke={clubColor}
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+        className="dsRB-radar-poly dsRB-radar-club"
+        style={{ '--delay': `${animDelay + 0.1}s` }}
+      />
+      {/* ユーザーのポリゴン */}
+      <polygon
+        points={polyStr(userPts)}
+        fill="#0e0e10"
+        fillOpacity="0.16"
+        stroke="#0e0e10"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+        className="dsRB-radar-poly dsRB-radar-user"
+        style={{ '--delay': `${animDelay + 0.3}s` }}
+      />
+      {/* 頂点ドット */}
+      {clubPts.map((p, i) => (
+        <circle
+          key={`c-${i}`}
+          cx={p.x} cy={p.y} r="2.3"
+          fill={clubColor} stroke="#fafaf7" strokeWidth="0.8"
+          className="dsRB-radar-vertex"
+          style={{ '--delay': `${animDelay + 0.5 + i * 0.05}s` }}
+        />
+      ))}
+      {userPts.map((p, i) => (
+        <circle
+          key={`u-${i}`}
+          cx={p.x} cy={p.y} r="2"
+          fill="#0e0e10" stroke="#fafaf7" strokeWidth="0.8"
+          className="dsRB-radar-vertex"
+          style={{ '--delay': `${animDelay + 0.7 + i * 0.05}s` }}
+        />
+      ))}
+      {/* 中心点 */}
+      <circle cx="0" cy="0" r="1" fill="#0e0e10" opacity="0.4" />
+    </svg>
   )
 }
 
@@ -178,37 +213,15 @@ export default async function ResultPage({ params, searchParams }) {
               <p className="text-xs text-zinc-600 leading-relaxed">{userType.description}</p>
             </div>
           )}
-          <div className="dsRB-fade space-y-5" style={{ '--d': '0.2s' }}>
+          <div className="dsRB-fade space-y-4" style={{ '--d': '0.2s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TYPE MAP</p>
-            <div className="space-y-5">
-              <CrossPlot
-                title="勝負観 × 経営観"
-                xPos={{ letter: 'R', name: '勝利' }}
-                xNeg={{ letter: 'E', name: '美学' }}
-                yPos={{ letter: 'W', name: '補強' }}
-                yNeg={{ letter: 'H', name: '育成' }}
-                userX={userVector.shoubu / 18}
-                userY={userVector.keiei / 18}
-                clubX={top1.club.vector.shoubu / 2}
-                clubY={top1.club.vector.keiei / 2}
-                clubColor={clubColor}
-                animDelay={0.35}
-              />
-              <CrossPlot
-                title="観戦観 × 関心軸"
-                xPos={{ letter: 'U', name: '熱狂' }}
-                xNeg={{ letter: 'A', name: '分析' }}
-                yPos={{ letter: 'O', name: '試合' }}
-                yNeg={{ letter: 'F', name: 'カルチャー' }}
-                userX={userVector.kansen / 18}
-                userY={userVector.kanshin / 18}
-                clubX={top1.club.vector.kansen / 2}
-                clubY={top1.club.vector.kanshin / 2}
-                clubColor={clubColor}
-                animDelay={0.55}
-              />
-            </div>
-            <div className="flex gap-3 text-[10px] font-mono text-zinc-500 pt-1">
+            <RadarPlot
+              userVector={userVector}
+              clubVector={top1.club.vector}
+              clubColor={clubColor}
+              animDelay={0.35}
+            />
+            <div className="flex gap-3 text-[10px] font-mono text-zinc-500">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#0e0e10]" />
                 you
@@ -218,6 +231,10 @@ export default async function ResultPage({ params, searchParams }) {
                 {top1.club.name}
               </span>
             </div>
+            <p className="text-[10px] font-mono text-zinc-400 leading-relaxed">
+              4軸の位置を 1 枚に。形が重なるほど相性◎。<br />
+              外側 = 正極 (R / W / U / O) / 反対側 = 負極。
+            </p>
           </div>
         </aside>
 
