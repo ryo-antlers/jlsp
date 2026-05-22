@@ -23,13 +23,13 @@ function parseSightseeing(s) {
  */
 function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
   const AXES_DEF = [
-    { id: 'shoubu',  posLetter: 'R', negLetter: 'E', label: '勝負' },
-    { id: 'keiei',   posLetter: 'W', negLetter: 'H', label: '経営' },
-    { id: 'kansen',  posLetter: 'U', negLetter: 'A', label: '観戦' },
-    { id: 'kanshin', posLetter: 'O', negLetter: 'F', label: '関心' },
+    { id: 'shoubu',  posLetter: 'R', negLetter: 'E', label: '勝負', negLabel: '美学' },
+    { id: 'keiei',   posLetter: 'W', negLetter: 'H', label: '経営', negLabel: '育成' },
+    { id: 'kansen',  posLetter: 'U', negLetter: 'A', label: '観戦', negLabel: '分析' },
+    { id: 'kanshin', posLetter: 'O', negLetter: 'F', label: '関心', negLabel: 'カルチャー' },
   ]
   const clamp = (v) => Math.max(-1, Math.min(1, v))
-  const VB_W = 200, VB_H = 110
+  const VB_W = 200, VB_H = 116
   const xs = [25, 75, 125, 175]
   const yTop = 24, yBottom = 86
   const yCenter = (yTop + yBottom) / 2
@@ -70,6 +70,7 @@ function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
           <text x={x} y={yTop - 10} fontSize="3.8" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.18em">{AXES_DEF[i].label}</text>
           <text x={x} y={yTop - 2.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.92" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].posLetter}</text>
           <text x={x} y={yBottom + 7.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].negLetter}</text>
+          <text x={x} y={yBottom + 14.5} fontSize="3.6" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.12em">{AXES_DEF[i].negLabel}</text>
         </g>
       ))}
 
