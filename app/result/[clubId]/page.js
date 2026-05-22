@@ -17,6 +17,78 @@ function parseSightseeing(s) {
   return s.split(/[、,，]/).map((x) => x.trim()).filter(Boolean).slice(0, 6)
 }
 
+/**
+ * 2軸の十字プロット (SVG)。-1..1 に正規化した userX/Y と clubX/Y を受け取り、
+ * 中心 0 起点の 4 象限に点を打つ。
+ */
+function CrossPlot({ title, xPos, xNeg, yPos, yNeg, userX, userY, clubX, clubY, clubColor, animDelay = 0.4 }) {
+  const clamp = (v) => Math.max(-1, Math.min(1, v))
+  const SCALE = 38
+  const ux = 50 + clamp(userX) * SCALE
+  const uy = 50 - clamp(userY) * SCALE
+  const cx = 50 + clamp(clubX) * SCALE
+  const cy = 50 - clamp(clubY) * SCALE
+
+  return (
+    <div>
+      <p className="text-[10px] font-mono tracking-[0.18em] text-zinc-400 mb-1.5">{title}</p>
+      <div className="relative">
+        <svg viewBox="0 0 100 100" className="w-full h-auto block">
+          {/* tick marks at quarter points */}
+          {[18, 32, 68, 82].map((p) => (
+            <g key={p}>
+              <line x1={p} y1="49" x2={p} y2="51" stroke="#0e0e10" strokeOpacity="0.18" strokeWidth="0.35" />
+              <line x1="49" y1={p} x2="51" y2={p} stroke="#0e0e10" strokeOpacity="0.18" strokeWidth="0.35" />
+            </g>
+          ))}
+          {/* axes */}
+          <line x1="8" y1="50" x2="92" y2="50" stroke="#0e0e10" strokeOpacity="0.35" strokeWidth="0.5" />
+          <line x1="50" y1="8" x2="50" y2="92" stroke="#0e0e10" strokeOpacity="0.35" strokeWidth="0.5" />
+          {/* arrow heads */}
+          <polygon points="92,50 88,48 88,52" fill="#0e0e10" fillOpacity="0.35" />
+          <polygon points="8,50 12,48 12,52" fill="#0e0e10" fillOpacity="0.35" />
+          <polygon points="50,8 48,12 52,12" fill="#0e0e10" fillOpacity="0.35" />
+          <polygon points="50,92 48,88 52,88" fill="#0e0e10" fillOpacity="0.35" />
+          {/* axis letters (大きな極ラベル) */}
+          <text x="96" y="52.5" fontSize="6" textAnchor="end" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{xPos.letter}</text>
+          <text x="4" y="52.5" fontSize="6" textAnchor="start" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{xNeg.letter}</text>
+          <text x="50" y="6" fontSize="6" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{yPos.letter}</text>
+          <text x="50" y="98" fontSize="6" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{yNeg.letter}</text>
+          {/* club dot (背景に出るよう先に描画) */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r="4"
+            fill={clubColor}
+            stroke="#fafaf7"
+            strokeWidth="1.2"
+            className="dsRB-cross-club"
+            style={{ '--delay': `${animDelay + 0.15}s` }}
+          />
+          {/* connecting line (user → club) */}
+          <line
+            x1={ux} y1={uy} x2={cx} y2={cy}
+            stroke="#0e0e10" strokeOpacity="0.2" strokeWidth="0.35" strokeDasharray="1.5 1.5"
+            className="dsRB-cross-line"
+            style={{ '--delay': `${animDelay + 0.3}s` }}
+          />
+          {/* user dot */}
+          <circle
+            cx={ux}
+            cy={uy}
+            r="3.5"
+            fill="#0e0e10"
+            stroke="#fafaf7"
+            strokeWidth="1.2"
+            className="dsRB-cross-user"
+            style={{ '--delay': `${animDelay}s` }}
+          />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
 export async function generateMetadata({ params, searchParams }) {
   const { clubId } = await params
   const sp = (await searchParams) ?? {}
@@ -106,28 +178,46 @@ export default async function ResultPage({ params, searchParams }) {
               <p className="text-xs text-zinc-600 leading-relaxed">{userType.description}</p>
             </div>
           )}
-          <div className="dsRB-fade space-y-3" style={{ '--d': '0.2s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">AXIS BREAKDOWN</p>
-            {AXES.map((axis, i) => {
-              const userN = Math.max(-1, Math.min(1, userVector[axis.id] / 18))
-              const pctL = ((userN + 1) / 2) * 100
-              return (
-                <div key={axis.id}>
-                  <div className="flex items-baseline justify-between text-[10px] font-mono">
-                    <span className="text-zinc-500">{axis.label}</span>
-                    <span className="text-zinc-700 font-bold">
-                      {userN >= 0 ? axis.positive.letter : axis.negative.letter}
-                    </span>
-                  </div>
-                  <div className="relative h-px bg-black/10 mt-1.5">
-                    <span
-                      className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#0e0e10]"
-                      style={{ left: `${pctL}%`, '--delay': `${0.3 + i * 0.05}s` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
+          <div className="dsRB-fade space-y-5" style={{ '--d': '0.2s' }}>
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TYPE MAP</p>
+            <div className="space-y-5">
+              <CrossPlot
+                title="勝負観 × 経営観"
+                xPos={{ letter: 'R', name: '勝利' }}
+                xNeg={{ letter: 'E', name: '美学' }}
+                yPos={{ letter: 'W', name: '補強' }}
+                yNeg={{ letter: 'H', name: '育成' }}
+                userX={userVector.shoubu / 18}
+                userY={userVector.keiei / 18}
+                clubX={top1.club.vector.shoubu / 2}
+                clubY={top1.club.vector.keiei / 2}
+                clubColor={clubColor}
+                animDelay={0.35}
+              />
+              <CrossPlot
+                title="観戦観 × 関心軸"
+                xPos={{ letter: 'U', name: '熱狂' }}
+                xNeg={{ letter: 'A', name: '分析' }}
+                yPos={{ letter: 'O', name: '試合' }}
+                yNeg={{ letter: 'F', name: 'カルチャー' }}
+                userX={userVector.kansen / 18}
+                userY={userVector.kanshin / 18}
+                clubX={top1.club.vector.kansen / 2}
+                clubY={top1.club.vector.kanshin / 2}
+                clubColor={clubColor}
+                animDelay={0.55}
+              />
+            </div>
+            <div className="flex gap-3 text-[10px] font-mono text-zinc-500 pt-1">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#0e0e10]" />
+                you
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: clubColor }} />
+                {top1.club.name}
+              </span>
+            </div>
           </div>
         </aside>
 
