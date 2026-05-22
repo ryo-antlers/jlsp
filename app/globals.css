@@ -181,25 +181,28 @@ body {
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* TYPE MAP — Parallel Coordinates 折れ線 draw-in + 頂点 pop-in */
+/* TYPE MAP — Parallel Coordinates 折れ線 draw-in + 頂点 pop-in
+   forwards で アニメ後の状態 (線が描画された状態) を保持 */
 .dsRB-pc-line {
   stroke-dasharray: 320;
   stroke-dashoffset: 320;
-  animation: dsRB-pc-draw 1.2s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0.4s) backwards;
+  animation: dsRB-pc-draw 1.2s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0.4s) forwards;
 }
 @keyframes dsRB-pc-draw {
-  from { stroke-dashoffset: 320; opacity: 0; }
-  to   { stroke-dashoffset: 0; opacity: 1; }
+  0%   { stroke-dashoffset: 320; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
 }
 
 .dsRB-pc-dot {
   transform-origin: center;
   transform-box: fill-box;
-  animation: dsRB-pc-dot 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay, 0.6s) backwards;
+  opacity: 0;
+  transform: scale(0);
+  animation: dsRB-pc-dot 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay, 0.6s) forwards;
 }
 @keyframes dsRB-pc-dot {
-  from { opacity: 0; transform: scale(0); }
-  to   { opacity: 1; transform: scale(1); }
+  0%   { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* 大型数字: 軽くスケールアップしながら入る */
