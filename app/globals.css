@@ -181,6 +181,21 @@ body {
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* クラブカラー巨大帯 (結果ページのヒーロー上端) */
+.dsRB-color-band {
+  height: 16px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.dsRB-color-band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.15));
+  pointer-events: none;
+}
+
 /* TYPE MAP — Parallel Coordinates 折れ線 draw-in + 頂点 pop-in
    forwards で アニメ後の状態 (線が描画された状態) を保持 */
 .dsRB-pc-line {

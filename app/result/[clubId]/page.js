@@ -3,7 +3,10 @@ import { notFound } from 'next/navigation'
 import { loadResultData } from '@/lib/jlsp/result-page-data'
 import { AXES } from '@/lib/jlsp/axes'
 import { TYPE_META } from '@/lib/jlsp/type-meta'
+import { TYPE_FLAVORS } from '@/lib/jlsp/type-flavors'
+import { CLUB_META } from '@/lib/jlsp/club-meta'
 import ShareButtons from './ShareButtons'
+import CountUp from './CountUp'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,10 +19,13 @@ function parseSightseeing(s) {
   if (!s) return []
   return s.split(/[、,，]/).map((x) => x.trim()).filter(Boolean).slice(0, 6)
 }
+function fmtYen(n) {
+  if (!n) return null
+  return '¥' + Number(n).toLocaleString('ja-JP')
+}
 
 /**
  * Parallel Coordinates: 4 軸を縦に並べた折れ線。S-curve でなめらかに繋ぐ。
- * 1.4px → 0.7px の細線、洗練されたデータ可視化。
  */
 function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
   const AXES_DEF = [
@@ -49,24 +55,19 @@ function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
 
   return (
     <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full h-auto block">
-      {/* 中央 0 線 (薄い破線) */}
       <line
         x1={xs[0] - 4} y1={yCenter} x2={xs[xs.length - 1] + 4} y2={yCenter}
         stroke="#0e0e10" strokeOpacity="0.08" strokeWidth="0.3" strokeDasharray="0.6 1.4"
       />
-
-      {/* 4 軸 */}
       {xs.map((x, i) => (
         <g key={i}>
           <line x1={x} y1={yTop} x2={x} y2={yBottom} stroke="#0e0e10" strokeOpacity="0.22" strokeWidth="0.3" />
-          {/* 微細ティック (±0.25 / ±0.5 / ±0.75) */}
           {[0.25, 0.5, 0.75].map((t) => (
             <g key={t}>
               <line x1={x - 1} y1={yCenter - halfH * t} x2={x + 1} y2={yCenter - halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
               <line x1={x - 1} y1={yCenter + halfH * t} x2={x + 1} y2={yCenter + halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
             </g>
           ))}
-          {/* axis label */}
           <text x={x} y={yTop - 10} fontSize="3.8" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.18em">{AXES_DEF[i].label}</text>
           <text x={x} y={yTop - 2.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.92" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].posLetter}</text>
           <text x={x} y={yBottom + 7.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].negLetter}</text>
@@ -74,7 +75,6 @@ function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
         </g>
       ))}
 
-      {/* club path (背面) */}
       <path
         d={smoothPath(clubYs)}
         fill="none"
@@ -96,7 +96,6 @@ function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
         />
       ))}
 
-      {/* user path */}
       <path
         d={smoothPath(userYs)}
         fill="none"
@@ -116,111 +115,6 @@ function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
           style={{ '--delay': `${animDelay + 0.65 + i * 0.05}s` }}
         />
       ))}
-    </svg>
-  )
-}
-
-/**
- * 4軸を 1 枚に統合した radar chart (旧). 残置 — 必要時に切替可能。
- */
-function RadarPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
-  const R = 44
-  // 数学角度 (反時計) 基準: 0=右(R), 45=右上(U), 90=上(W), 135=左上(O)
-  const AXES_DEF = [
-    { id: 'shoubu',  angle: 0,   posLetter: 'R', negLetter: 'E' },
-    { id: 'kansen',  angle: 45,  posLetter: 'U', negLetter: 'A' },
-    { id: 'keiei',   angle: 90,  posLetter: 'W', negLetter: 'H' },
-    { id: 'kanshin', angle: 135, posLetter: 'O', negLetter: 'F' },
-  ]
-  const clamp = (v) => Math.max(-1, Math.min(1, v))
-  function pointOf(score, baseAngle) {
-    const s = clamp(score)
-    const actualAngle = s >= 0 ? baseAngle : baseAngle + 180
-    const dist = Math.abs(s) * R
-    const rad = (actualAngle * Math.PI) / 180
-    return { x: dist * Math.cos(rad), y: -dist * Math.sin(rad) }
-  }
-  function polyStr(pts) {
-    // 中心からの角度で時計回りに並べてポリゴンが綺麗に閉じるようにする
-    const sorted = [...pts].sort((a, b) => Math.atan2(-a.y, a.x) - Math.atan2(-b.y, b.x))
-    return sorted.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')
-  }
-
-  const userPts = AXES_DEF.map((a) => pointOf(userVector[a.id] / 18, a.angle))
-  const clubPts = AXES_DEF.map((a) => pointOf(clubVector[a.id] / 2, a.angle))
-
-  return (
-    <svg viewBox="-58 -58 116 116" className="w-full h-auto block">
-      {/* 同心円リング (4段) */}
-      {[11, 22, 33, 44].map((r) => (
-        <circle key={r} cx="0" cy="0" r={r} fill="none" stroke="#0e0e10" strokeOpacity="0.07" strokeWidth="0.35" />
-      ))}
-      {/* 4 スポーク (両端まで) */}
-      {AXES_DEF.map((a) => {
-        const rad = (a.angle * Math.PI) / 180
-        const x = R * Math.cos(rad)
-        const y = -R * Math.sin(rad)
-        return (
-          <line
-            key={a.id}
-            x1={-x} y1={-y} x2={x} y2={y}
-            stroke="#0e0e10" strokeOpacity="0.18" strokeWidth="0.4"
-          />
-        )
-      })}
-      {/* 8 極ラベル */}
-      {AXES_DEF.flatMap((a) => {
-        const rad = (a.angle * Math.PI) / 180
-        const lx = 52 * Math.cos(rad)
-        const ly = -52 * Math.sin(rad)
-        return [
-          <text key={`${a.id}+`} x={lx} y={ly + 2} fontSize="7" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.85" fontFamily="var(--font-geist-mono), monospace">{a.posLetter}</text>,
-          <text key={`${a.id}-`} x={-lx} y={-ly + 2} fontSize="7" textAnchor="middle" fontWeight="900" fill="#0e0e10" opacity="0.5" fontFamily="var(--font-geist-mono), monospace">{a.negLetter}</text>,
-        ]
-      })}
-      {/* クラブのポリゴン (背面) */}
-      <polygon
-        points={polyStr(clubPts)}
-        fill={clubColor}
-        fillOpacity="0.22"
-        stroke={clubColor}
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-        className="dsRB-radar-poly dsRB-radar-club"
-        style={{ '--delay': `${animDelay + 0.1}s` }}
-      />
-      {/* ユーザーのポリゴン */}
-      <polygon
-        points={polyStr(userPts)}
-        fill="#0e0e10"
-        fillOpacity="0.16"
-        stroke="#0e0e10"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-        className="dsRB-radar-poly dsRB-radar-user"
-        style={{ '--delay': `${animDelay + 0.3}s` }}
-      />
-      {/* 頂点ドット */}
-      {clubPts.map((p, i) => (
-        <circle
-          key={`c-${i}`}
-          cx={p.x} cy={p.y} r="2.3"
-          fill={clubColor} stroke="#fafaf7" strokeWidth="0.8"
-          className="dsRB-radar-vertex"
-          style={{ '--delay': `${animDelay + 0.5 + i * 0.05}s` }}
-        />
-      ))}
-      {userPts.map((p, i) => (
-        <circle
-          key={`u-${i}`}
-          cx={p.x} cy={p.y} r="2"
-          fill="#0e0e10" stroke="#fafaf7" strokeWidth="0.8"
-          className="dsRB-radar-vertex"
-          style={{ '--delay': `${animDelay + 0.7 + i * 0.05}s` }}
-        />
-      ))}
-      {/* 中心点 */}
-      <circle cx="0" cy="0" r="1" fill="#0e0e10" opacity="0.4" />
     </svg>
   )
 }
@@ -260,7 +154,14 @@ export default async function ResultPage({ params, searchParams }) {
   if (!data) notFound()
   const { top1, top3, worst3, detail, userType, userTypeCode, userVector, teamId } = data
   const clubColor = top1.club.color
+  const clubMeta = CLUB_META[top1.club.id] ?? {}
+  const flavors = TYPE_FLAVORS[userTypeCode]
   const sightseeing = parseSightseeing(top1.club.sightseeing)
+  const description = clubMeta.descriptionLong ?? top1.club.description
+  const lat = detail?.stadium?.home_stadium_lat
+  const lng = detail?.stadium?.home_stadium_lng
+  const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null
+  const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
   return (
     <div className="dsRB min-h-screen w-full bg-[#fafaf7] text-[#0e0e10]">
@@ -276,7 +177,10 @@ export default async function ResultPage({ params, searchParams }) {
         </div>
       </div>
 
-      {/* MOBILE TYPE STRIP — モバイルでは上に大きく出す (sticky 列が下に来るため) */}
+      {/* クラブカラー巨大帯 */}
+      <div className="dsRB-color-band" style={{ backgroundColor: clubColor }} />
+
+      {/* MOBILE TYPE STRIP */}
       <div className="lg:hidden border-b border-black/10 bg-white">
         <div className="px-5 py-5">
           <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-2">YOUR FANTYPE</p>
@@ -295,7 +199,7 @@ export default async function ResultPage({ params, searchParams }) {
       {/* 3 COLUMN MAIN */}
       <div className="max-w-7xl mx-auto px-5 sm:px-10 py-8 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-x-10 gap-y-12 lg:gap-y-14">
 
-        {/* LEFT COLUMN — TYPE (desktop sticky) */}
+        {/* LEFT COLUMN */}
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
           <div className="dsRB-fade" style={{ '--d': '0s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°01 — TYPE</p>
@@ -303,9 +207,7 @@ export default async function ResultPage({ params, searchParams }) {
               <p className="text-5xl xl:text-6xl font-black tracking-[0.04em] leading-none" style={{ color: '#c7384d' }}>
                 {userTypeCode ?? '----'}
               </p>
-              <p className="text-xl xl:text-2xl font-bold mt-2 leading-tight">
-                {userType?.nickname ?? ''}
-              </p>
+              <p className="text-xl xl:text-2xl font-bold mt-2 leading-tight">{userType?.nickname ?? ''}</p>
             </div>
           </div>
           {userType && (
@@ -316,30 +218,30 @@ export default async function ResultPage({ params, searchParams }) {
           )}
           <div className="dsRB-fade space-y-4" style={{ '--d': '0.2s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TYPE MAP</p>
-            <ParallelPlot
-              userVector={userVector}
-              clubVector={top1.club.vector}
-              clubColor={clubColor}
-              animDelay={0.35}
-            />
+            <ParallelPlot userVector={userVector} clubVector={top1.club.vector} clubColor={clubColor} animDelay={0.35} />
             <div className="flex gap-3 text-[10px] font-mono text-zinc-500 pt-1">
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block w-3 h-px bg-[#0e0e10]" />
-                you
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block w-3 h-px" style={{ backgroundColor: clubColor }} />
-                {top1.club.name}
-              </span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px bg-[#0e0e10]" />you</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px" style={{ backgroundColor: clubColor }} />{top1.club.name}</span>
             </div>
-            <p className="text-[10px] font-mono text-zinc-400 leading-relaxed">
-              4 軸を縦に並べて折れ線で比較。上 = 正極、下 = 負極。
-            </p>
           </div>
+
+          {/* TYPE FLAVORS */}
+          {flavors && (
+            <div className="dsRB-fade space-y-3 border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">FLAVORS</p>
+              <p className="text-xs text-zinc-600 leading-relaxed">
+                {userType?.nickname} が好きそうな世界観。
+              </p>
+              <FlavorRow label="MOVIE" items={flavors.movies} />
+              <FlavorRow label="MUSIC" items={flavors.music} />
+              <FlavorRow label="FOOD" items={flavors.foods} />
+            </div>
+          )}
         </aside>
 
-        {/* CENTER COLUMN — CLUB MAIN */}
+        {/* CENTER COLUMN */}
         <main className="lg:col-span-6 space-y-12 sm:space-y-16 order-1 lg:order-2">
+          {/* CLUB HERO */}
           <section className="dsRB-fade" style={{ '--d': '0.05s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">YOUR CLUB</p>
             <div className="h-1 w-16 mb-5" style={{ backgroundColor: clubColor }} />
@@ -348,7 +250,7 @@ export default async function ResultPage({ params, searchParams }) {
             </h1>
             <div className="flex items-baseline gap-3 mb-5 flex-wrap">
               <span className="dsRB-bignum text-6xl sm:text-[7rem] font-black tabular-nums leading-none" style={{ color: clubColor }}>
-                {pct(top1.score)}
+                <CountUp target={pct(top1.score)} duration={1500} delay={200} />
               </span>
               <span className="text-sm sm:text-base font-mono tracking-[0.2em] text-zinc-500">% MATCH</span>
             </div>
@@ -360,8 +262,8 @@ export default async function ResultPage({ params, searchParams }) {
                 {top1.club.region}・{top1.club.prefecture}
               </span>
             </div>
-            <p className="text-base sm:text-lg leading-[1.75] text-[#0e0e10] font-medium">
-              {top1.club.description}
+            <p className="text-base sm:text-lg leading-[1.85] text-[#0e0e10] font-medium">
+              {description}
             </p>
           </section>
 
@@ -384,14 +286,8 @@ export default async function ResultPage({ params, searchParams }) {
                       <span className="font-mono text-xl font-black" style={{ color: matchColor }}>{matchSymbol}</span>
                     </div>
                     <div className="relative h-2.5 rounded-full bg-black/10">
-                      <span
-                        className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-[#0e0e10] ring-2 ring-[#fafaf7]"
-                        style={{ left: `${userPct}%`, '--delay': `${0.4 + i * 0.05}s` }}
-                      />
-                      <span
-                        className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full ring-2 ring-white"
-                        style={{ left: `${clubPct}%`, backgroundColor: clubColor, '--delay': `${0.55 + i * 0.05}s` }}
-                      />
+                      <span className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-[#0e0e10] ring-2 ring-[#fafaf7]" style={{ left: `${userPct}%`, '--delay': `${0.4 + i * 0.05}s` }} />
+                      <span className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full ring-2 ring-white" style={{ left: `${clubPct}%`, backgroundColor: clubColor, '--delay': `${0.55 + i * 0.05}s` }} />
                     </div>
                     <div className="flex justify-between text-[10px] font-mono text-zinc-500 mt-1.5">
                       <span>{axis.negative.name}</span>
@@ -407,9 +303,101 @@ export default async function ResultPage({ params, searchParams }) {
             </p>
           </section>
 
+          {/* STADIUM + Maps + 最寄駅 */}
+          {(detail?.stadium || clubMeta.access) && (
+            <section className="dsRB-fade" style={{ '--d': '0.2s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">STADIUM</p>
+              <div className="border-t border-black/10 pt-6 space-y-3">
+                {detail?.stadium?.home_stadium_name && (
+                  <p className="text-xl sm:text-2xl font-black">{detail.stadium.home_stadium_name}</p>
+                )}
+                {clubMeta.access && (
+                  <p className="text-sm text-zinc-700">
+                    最寄: <span className="font-bold">{clubMeta.access.station}</span>
+                    {clubMeta.access.walkMinutes != null && <span> · 徒歩 {clubMeta.access.walkMinutes} 分</span>}
+                    {clubMeta.access.note && <span className="text-zinc-500"> ({clubMeta.access.note})</span>}
+                  </p>
+                )}
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-zinc-700 hover:text-[#0e0e10] border-b border-black/20 hover:border-[#0e0e10] transition-colors pb-0.5"
+                  >
+                    Google Maps で開く →
+                  </a>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* AWAY TRAVEL */}
+          {clubMeta.awayTravel?.fromTokyo && (
+            <section className="dsRB-fade" style={{ '--d': '0.22s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">AWAY TRAVEL</p>
+              <div className="border-t border-black/10 pt-6">
+                <p className="text-xs text-zinc-600 mb-4">東京駅からのアクセス目安。</p>
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  <div>
+                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">所要時間</p>
+                    <p className="text-lg sm:text-xl font-black">{clubMeta.awayTravel.fromTokyo.hours}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">交通手段</p>
+                    <p className="text-sm font-bold">{clubMeta.awayTravel.fromTokyo.transport}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">料金目安</p>
+                    <p className="text-lg sm:text-xl font-black tabular-nums">{fmtYen(clubMeta.awayTravel.fromTokyo.yen) ?? '—'}</p>
+                  </div>
+                </div>
+                {clubMeta.awayTravel.fromTokyo.note && (
+                  <p className="text-xs text-zinc-500 mt-3">{clubMeta.awayTravel.fromTokyo.note}</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* MASCOT */}
+          {clubMeta.mascot && (
+            <section className="dsRB-fade" style={{ '--d': '0.24s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MASCOT</p>
+              <div className="border-t border-black/10 pt-6">
+                <p className="text-xl sm:text-2xl font-black mb-2" style={{ color: clubColor }}>
+                  {clubMeta.mascot.name}
+                </p>
+                <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">{clubMeta.mascot.description}</p>
+              </div>
+            </section>
+          )}
+
+          {/* OFFICIAL LINKS */}
+          {hasOfficial && (
+            <section className="dsRB-fade" style={{ '--d': '0.26s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">OFFICIAL</p>
+              <div className="border-t border-black/10 pt-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {clubMeta.official.hp && (
+                    <OfficialLink href={clubMeta.official.hp} label="公式 HP" />
+                  )}
+                  {clubMeta.official.x && (
+                    <OfficialLink href={clubMeta.official.x} label="X (Twitter)" />
+                  )}
+                  {clubMeta.official.instagram && (
+                    <OfficialLink href={clubMeta.official.instagram} label="Instagram" />
+                  )}
+                  {clubMeta.official.shop && (
+                    <OfficialLink href={clubMeta.official.shop} label="SHOP" />
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* EXPLORE */}
           {sightseeing.length > 0 && (
-            <section className="dsRB-fade" style={{ '--d': '0.25s' }}>
+            <section className="dsRB-fade" style={{ '--d': '0.28s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">EXPLORE</p>
               <p className="text-xs sm:text-sm text-zinc-600 mb-4 leading-relaxed">
                 {top1.club.prefecture} の見どころ。観戦のついでにどうぞ。
@@ -490,6 +478,16 @@ export default async function ResultPage({ params, searchParams }) {
                   </div>
                 )
               })}
+              {clubMeta.ticketUrl && (
+                <a
+                  href={clubMeta.ticketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.18em] text-zinc-500 hover:text-zinc-900 border-t border-black/10 pt-3 transition-colors"
+                >
+                  Jリーグチケット で買う →
+                </a>
+              )}
             </div>
           )}
 
@@ -542,7 +540,7 @@ export default async function ResultPage({ params, searchParams }) {
         </div>
       </div>
 
-      {/* 16 TYPES — expander */}
+      {/* 16 TYPES expander */}
       <div className="border-t border-black/10">
         <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
           <details className="dsRB-types group">
@@ -557,9 +555,7 @@ export default async function ResultPage({ params, searchParams }) {
                   <div
                     key={t.code}
                     className={`px-3 py-2.5 rounded-lg border ${
-                      isMine
-                        ? 'border-[#c7384d] bg-[#fff5f7]'
-                        : 'border-black/10 bg-white'
+                      isMine ? 'border-[#c7384d] bg-[#fff5f7]' : 'border-black/10 bg-white'
                     }`}
                   >
                     <p
@@ -569,14 +565,38 @@ export default async function ResultPage({ params, searchParams }) {
                       {t.code}
                     </p>
                     <p className="text-xs sm:text-sm font-bold mt-1 leading-tight">{t.nickname}</p>
-                    {isMine && (
-                      <p className="text-[9px] font-mono text-[#c7384d] mt-1 tracking-[0.2em]">YOU</p>
-                    )}
+                    {isMine && <p className="text-[9px] font-mono text-[#c7384d] mt-1 tracking-[0.2em]">YOU</p>}
                   </div>
                 )
               })}
             </div>
           </details>
+        </div>
+      </div>
+
+      {/* MORE LINKS (観戦ガイド / Jチケ / toto) */}
+      <div className="border-t border-black/10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
+          <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">MORE</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <ExternalLink
+              href="https://www.jleague.jp/aboutj/howto/"
+              label="観戦初心者ガイド"
+              sub="J リーグ公式のはじめてガイド"
+            />
+            {clubMeta.ticketUrl && (
+              <ExternalLink
+                href={clubMeta.ticketUrl}
+                label="J リーグチケット"
+                sub={`${top1.club.name} の試合チケット`}
+              />
+            )}
+            <ExternalLink
+              href="https://store.toto-dream.com/dcs/subos/screen/pi01/spin010/PGSPIN01001InitDispatchAction.do"
+              label="toto / BIG"
+              sub="J リーグを予想して当てる"
+            />
+          </div>
         </div>
       </div>
 
@@ -597,5 +617,52 @@ export default async function ResultPage({ params, searchParams }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function FlavorRow({ label, items }) {
+  return (
+    <div>
+      <p className="text-[9px] font-mono tracking-[0.25em] text-zinc-500 mb-1">{label}</p>
+      <ul className="text-xs text-zinc-700 leading-relaxed">
+        {items.map((it) => (
+          <li key={it} className="truncate">{it}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function OfficialLink({ href, label }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block border border-black/10 hover:border-black px-3 py-2.5 rounded-lg bg-white transition-colors group"
+    >
+      <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-0.5">LINK</p>
+      <p className="text-xs sm:text-sm font-bold flex items-center justify-between">
+        <span>{label}</span>
+        <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
+      </p>
+    </a>
+  )
+}
+
+function ExternalLink({ href, label, sub }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block border border-black/10 hover:border-black px-5 py-4 rounded-lg bg-white transition-colors group"
+    >
+      <p className="text-sm sm:text-base font-black mb-1 flex items-center justify-between">
+        <span>{label}</span>
+        <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
+      </p>
+      {sub && <p className="text-[11px] text-zinc-500">{sub}</p>}
+    </a>
   )
 }
