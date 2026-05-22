@@ -124,7 +124,216 @@ body {
   transition: 800ms ease all;
 }
 
-/* quiz ページ用のサイズ控えめ variant + disabled 状態 */
+/* ==========================================================================
+   Design C (result-c): Scroll Hero (full-bleed sections)
+   ========================================================================== */
+.dsRC-hero {
+  min-height: 100vh;
+  padding: clamp(80px, 14vh, 140px) clamp(24px, 5vw, 56px) clamp(60px, 10vh, 100px);
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.dsRC-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  animation: dsRC-fade 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes dsRC-fade {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dsRC-eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  margin-bottom: 28px;
+}
+.dsRC-mini-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  margin-bottom: 8px;
+}
+
+/* HERO 1 TYPE */
+.dsRC-typecode {
+  font-size: clamp(96px, 18vw, 220px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.dsRC-nickname {
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+.dsRC-tagline {
+  font-size: clamp(18px, 1.6vw, 22px);
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.dsRC-desc {
+  font-size: clamp(13px, 1vw, 15px);
+  line-height: 1.8;
+  max-width: 56ch;
+}
+.dsRC-scroll {
+  margin-top: clamp(40px, 6vh, 64px);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  animation: dsRC-bounce 1.8s ease-in-out infinite;
+}
+@keyframes dsRC-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(8px); }
+}
+
+/* HERO 2 CLUB */
+.dsRC-club-name {
+  font-size: clamp(48px, 9vw, 128px);
+  font-weight: 900;
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+  margin-bottom: 36px;
+}
+.dsRC-club-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  margin-bottom: 56px;
+  flex-wrap: wrap;
+}
+.dsRC-club-pct {
+  font-size: clamp(56px, 10vw, 120px);
+  font-weight: 900;
+  line-height: 1;
+  font-feature-settings: 'tnum';
+}
+.dsRC-club-pct small {
+  font-size: 0.4em;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  margin-left: 4px;
+}
+.dsRC-club-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dsRC-club-chips > span {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  letter-spacing: 0.15em;
+}
+.dsRC-club-3col {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: clamp(20px, 3vw, 40px);
+  padding-top: 28px;
+  border-top: 1px solid currentColor;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+@media (max-width: 720px) {
+  .dsRC-club-3col { grid-template-columns: 1fr; }
+}
+
+/* HERO 3 WHY */
+.dsRC-section-title {
+  font-size: clamp(28px, 4.5vw, 56px);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 56px;
+}
+.dsRC-axes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 4vw, 56px);
+}
+.dsRC-axis-row {}
+@media (max-width: 720px) {
+  .dsRC-axes { grid-template-columns: 1fr; gap: 32px; }
+}
+
+/* SCENE 4 — DATA 3 COL */
+.dsRC-3grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: clamp(28px, 4vw, 56px);
+}
+.dsRC-col {}
+@media (max-width: 720px) {
+  .dsRC-3grid { grid-template-columns: 1fr; gap: 40px; }
+}
+
+/* SCENE 5 — SUMMARY */
+.dsRC-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(40px, 6vw, 80px);
+}
+@media (max-width: 720px) {
+  .dsRC-summary-grid { grid-template-columns: 1fr; gap: 48px; }
+}
+
+/* ==========================================================================
+   Design B (result-b): Magazine 3-column 用 fade
+   ========================================================================== */
+.dsRB-fade {
+  animation: dsRB-fade 0.8s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) backwards;
+}
+@keyframes dsRB-fade {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Design A (result-a): Bento Grid 用カード
+   ========================================================================== */
+.dsRA {
+  background: #0e0e10;
+  color: #fafaf7;
+}
+
+.dsRA-card {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  animation: dsRA-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) backwards;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.dsRA-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.dsRA-card-color {
+  border-color: transparent;
+}
+
+@keyframes dsRA-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   quiz ページ用のサイズ控えめ variant + disabled 状態
+   ========================================================================== */
+
 .cta-button-sm {
   height: 52px;
   font-size: 1.15rem;

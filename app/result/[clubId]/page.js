@@ -6,6 +6,7 @@ import { loadJlspState } from '@/lib/jlsp/loader'
 import { loadClubDetail } from '@/lib/jlsp/club-detail'
 import { AXES } from '@/lib/jlsp/axes'
 import ShareButtons from './ShareButtons'
+import ResultPreviewNav from '@/app/_result-preview-nav'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +62,7 @@ export default async function ResultPage({ params, searchParams }) {
 
   return (
     <div className="min-h-screen flex flex-col w-full">
+      <ResultPreviewNav current="z" clubId={clubId} a={a} />
       <header className="border-b border-[var(--border)]">
         <div className="max-w-3xl mx-auto w-full px-6 py-4 flex items-center justify-between">
           <Link
