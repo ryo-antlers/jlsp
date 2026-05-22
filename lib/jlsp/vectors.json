@@ -1,30 +1,25 @@
 {
   "kashima": {
-    "nekkyou": -2,
-    "soshiki": -1
+    "kansen": 2
   },
   "urawa": {
-    "keiei": 2,
-    "soshiki": -1,
-    "shoubu": -1
+    "shoubu": -1,
+    "keiei": 2
   },
   "kawasaki": {
-    "nekkyou": 2,
-    "shoubu": -2
+    "shoubu": -2,
+    "kansen": -2
   },
   "f-marinos": {
     "shoubu": -1,
-    "soshiki": -2,
     "keiei": 1,
-    "nekkyou": 1
+    "kansen": -1
   },
   "verdy": {
-    "soshiki": -1,
-    "nekkyou": 1
+    "kansen": -1
   },
   "reysol": {
-    "shoubu": 0,
-    "soshiki": 2
+    "shoubu": 0
   },
   "grampus": {
     "keiei": 2
@@ -33,88 +28,59 @@
     "shoubu": 1
   },
   "cerezo": {
-    "nekkyou": 1,
-    "soshiki": -1
-  },
-  "kobe": {
-    "soshiki": -2
+    "kansen": -1
   },
   "sanfrecce": {
     "keiei": 0
   },
   "avispa": {
     "keiei": -2,
-    "soshiki": -1,
-    "nekkyou": 0
+    "kansen": 0
   },
   "tosu": {
-    "shoubu": 1,
-    "soshiki": 0
+    "shoubu": 1
   },
   "kyoto": {
     "keiei": 1
   },
   "iwata": {
-    "nekkyou": 0,
-    "soshiki": 1
+    "kansen": 0
   },
   "machida": {
-    "soshiki": -2,
-    "nekkyou": 1
+    "kansen": -1
   },
   "chiba": {
     "keiei": -1,
-    "nekkyou": 1
+    "kansen": -1
   },
   "mito": {
-    "nekkyou": 2
+    "kansen": -2
   },
   "shimizu": {
     "shoubu": -1,
-    "nekkyou": 1
+    "kansen": -1
   },
   "okayama": {
-    "soshiki": 0,
-    "nekkyou": 1
-  },
-  "sapporo": {
-    "soshiki": 1
+    "kansen": -1
   },
   "niigata": {
     "shoubu": -2,
     "keiei": -1
   },
   "yokohamafc": {
-    "soshiki": -1,
     "keiei": -1,
-    "nekkyou": 1
-  },
-  "sendai": {
-    "soshiki": -1
+    "kansen": -1
   },
   "kofu": {
-    "nekkyou": 1
-  },
-  "tokushima": {
-    "soshiki": 1
+    "kansen": -1
   },
   "oita": {
-    "soshiki": 0,
     "keiei": -1
   },
   "hachinohe": {
     "keiei": -2
   },
-  "imabari": {
-    "soshiki": 1
-  },
   "matsumoto": {
-    "nekkyou": -1
-  },
-  "kumamoto": {
-    "soshiki": 1
-  },
-  "nara": {
-    "soshiki": 1
+    "kansen": 1
   }
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { decodeAnswers, matchClubs, scoreAnswers } from '@/lib/jlsp/diagnose'
+import { decodeAnswers, matchClubs, scoreAnswers, vectorToCode } from '@/lib/jlsp/diagnose'
+import { TYPE_META } from '@/lib/jlsp/type-meta'
 import { loadJlspState } from '@/lib/jlsp/loader'
 import { loadClubDetail } from '@/lib/jlsp/club-detail'
 import { AXES } from '@/lib/jlsp/axes'
@@ -55,6 +56,8 @@ export default async function ResultPage({ params, searchParams }) {
   const detail = await loadClubDetail(teamId)
 
   const userVector = scoreAnswers(answers)
+  const userTypeCode = vectorToCode(userVector)
+  const userType = TYPE_META[userTypeCode]
 
   return (
     <div className="min-h-screen flex flex-col w-full">
@@ -73,8 +76,34 @@ export default async function ResultPage({ params, searchParams }) {
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-12 sm:py-16">
-        {/* ========= TOP1 ヒーロー ========= */}
-        <section>
+        {/* ========= タイプヒーロー ========= */}
+        {userType && (
+          <section className="mb-12 sm:mb-16">
+            <p className="text-[10px] sm:text-xs font-mono tracking-[0.3em] text-[var(--muted)] mb-6">
+              YOUR FANTYPE
+            </p>
+            <div className="flex items-baseline gap-4 sm:gap-5 flex-wrap mb-4">
+              <span
+                className="text-4xl sm:text-6xl font-black tracking-[0.08em] tabular-nums"
+                style={{ color: '#c7384d' }}
+              >
+                {userType.code}
+              </span>
+              <span className="text-2xl sm:text-3xl font-bold leading-none">
+                {userType.nickname}
+              </span>
+            </div>
+            <p className="text-base sm:text-lg font-bold mb-3 leading-snug">
+              {userType.tagline}
+            </p>
+            <p className="text-sm sm:text-base leading-relaxed text-[var(--muted)]">
+              {userType.description}
+            </p>
+          </section>
+        )}
+
+        {/* ========= TOP1 クラブヒーロー ========= */}
+        <section className="pt-10 sm:pt-12 border-t border-[var(--border)]">
           <p className="text-[10px] sm:text-xs font-mono tracking-[0.3em] text-[var(--muted)] mb-6">
             #01 <span className="mx-2 opacity-50">—</span> YOUR CLUB
           </p>

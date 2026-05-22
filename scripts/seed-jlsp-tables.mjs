@@ -42,6 +42,11 @@ for (const stmt of statements) {
   await sql.query(stmt)
 }
 
+console.log('\n--- 2a. CLEAN (axis_id 体系が変わったため旧データを全消し) ---')
+await sql`DELETE FROM jlsp_vector_overrides`
+await sql`DELETE FROM jlsp_question_overrides`
+console.log('  cleared old rows')
+
 console.log('\n--- 2. SEED jlsp_vector_overrides (from vectors.json) ---')
 const vectors = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/jlsp/vectors.json'), 'utf8'))
 let vCount = 0
