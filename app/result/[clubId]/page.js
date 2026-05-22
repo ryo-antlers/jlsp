@@ -1,23 +1,36 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { loadResultData } from '@/lib/jlsp/result-page-data'
-import { AXES } from '@/lib/jlsp/axes'
 import { TYPE_META } from '@/lib/jlsp/type-meta'
-import { TYPE_FLAVORS } from '@/lib/jlsp/type-flavors'
 import { CLUB_META } from '@/lib/jlsp/club-meta'
+import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players'
+import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
+import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
 export const dynamic = 'force-dynamic'
 
 function pct(s) { return Math.round(s * 100) }
-function fmtDate(d) {
+const JP_DOW = ['日', '月', '火', '水', '木', '金', '土']
+function fmtMatchDate(d) {
   const x = new Date(d)
-  return `${x.getMonth() + 1}/${x.getDate()} ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`
+  return {
+    month: x.getMonth() + 1,
+    day: x.getDate(),
+    dow: JP_DOW[x.getDay()],
+    hh: String(x.getHours()).padStart(2, '0'),
+    mm: String(x.getMinutes()).padStart(2, '0'),
+    daysUntil: Math.max(0, Math.ceil((x.getTime() - Date.now()) / 86400000)),
+  }
 }
 function parseSightseeing(s) {
   if (!s) return []
   return s.split(/[、,，]/).map((x) => x.trim()).filter(Boolean).slice(0, 6)
+}
+// Wikipedia の disambiguation 括弧 (例: "玉川温泉 (秋田県)") を表示用に剥がす。
+function displayTitle(t) {
+  return (t || '').replace(/\s*[（(][^）)]*[）)]\s*/g, '').trim()
 }
 function fmtYen(n) {
   if (!n) return null
@@ -155,8 +168,14 @@ export default async function ResultPage({ params, searchParams }) {
   const { top1, top3, worst3, detail, userType, userTypeCode, userVector, teamId } = data
   const clubColor = top1.club.color
   const clubMeta = CLUB_META[top1.club.id] ?? {}
-  const flavors = TYPE_FLAVORS[userTypeCode]
-  const sightseeing = parseSightseeing(top1.club.sightseeing)
+  const alumni = NOTABLE_ALUMNI[top1.club.id] ?? []
+  const overseas = OVERSEAS_PLAYERS[top1.club.id] ?? []
+  // SIGHTSEEING_SPOTS (6 件) を優先、未登録クラブは clubs.js の sightseeing (2 件) に fallback。
+  const sightseeing =
+    SIGHTSEEING_SPOTS[top1.club.id] ?? parseSightseeing(top1.club.sightseeing)
+  // Wikipedia (ja) からサムネ画像を並列取得。失敗したものは image:null で返るので
+  // テキストカードに自動 fallback できる。
+  const sightseeingCards = await getWikiThumbnails(sightseeing)
   const description = clubMeta.descriptionLong ?? top1.club.description
   const lat = detail?.stadium?.home_stadium_lat
   const lng = detail?.stadium?.home_stadium_lng
@@ -224,19 +243,6 @@ export default async function ResultPage({ params, searchParams }) {
               <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px" style={{ backgroundColor: clubColor }} />{top1.club.name}</span>
             </div>
           </div>
-
-          {/* TYPE FLAVORS */}
-          {flavors && (
-            <div className="dsRB-fade space-y-3 border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">FLAVORS</p>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                {userType?.nickname} が好きそうな世界観。
-              </p>
-              <FlavorRow label="MOVIE" items={flavors.movies} />
-              <FlavorRow label="MUSIC" items={flavors.music} />
-              <FlavorRow label="FOOD" items={flavors.foods} />
-            </div>
-          )}
         </aside>
 
         {/* CENTER COLUMN */}
@@ -264,42 +270,6 @@ export default async function ResultPage({ params, searchParams }) {
             </div>
             <p className="text-base sm:text-lg leading-[1.85] text-[#0e0e10] font-medium">
               {description}
-            </p>
-          </section>
-
-          {/* WHY THIS MATCH */}
-          <section className="dsRB-fade" style={{ '--d': '0.15s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">WHY THIS MATCH</p>
-            <div className="border-t border-black/10 pt-6 space-y-6">
-              {AXES.map((axis, i) => {
-                const userN = Math.max(-1, Math.min(1, userVector[axis.id] / 18))
-                const clubN = Math.max(-1, Math.min(1, top1.club.vector[axis.id] / 2))
-                const userPct = ((userN + 1) / 2) * 100
-                const clubPct = ((clubN + 1) / 2) * 100
-                const gap = Math.abs(userN - clubN)
-                const matchSymbol = gap < 0.25 ? '◎' : gap < 0.55 ? '◯' : gap < 0.85 ? '△' : '×'
-                const matchColor = gap < 0.25 ? '#22c55e' : gap < 0.55 ? '#0e0e10' : gap < 0.85 ? '#f59e0b' : '#ef4444'
-                return (
-                  <div key={axis.id}>
-                    <div className="flex items-baseline justify-between mb-2">
-                      <span className="text-sm sm:text-base font-bold">{axis.label}</span>
-                      <span className="font-mono text-xl font-black" style={{ color: matchColor }}>{matchSymbol}</span>
-                    </div>
-                    <div className="relative h-2.5 rounded-full bg-black/10">
-                      <span className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-[#0e0e10] ring-2 ring-[#fafaf7]" style={{ left: `${userPct}%`, '--delay': `${0.4 + i * 0.05}s` }} />
-                      <span className="dsRB-axis-dot absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full ring-2 ring-white" style={{ left: `${clubPct}%`, backgroundColor: clubColor, '--delay': `${0.55 + i * 0.05}s` }} />
-                    </div>
-                    <div className="flex justify-between text-[10px] font-mono text-zinc-500 mt-1.5">
-                      <span>{axis.negative.name}</span>
-                      <span>{axis.positive.name}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <p className="mt-4 text-[10px] font-mono text-zinc-500 flex items-center gap-3">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#0e0e10]" /> あなた</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: clubColor }} /> {top1.club.name}</span>
             </p>
           </section>
 
@@ -396,113 +366,124 @@ export default async function ResultPage({ params, searchParams }) {
           )}
 
           {/* EXPLORE */}
-          {sightseeing.length > 0 && (
+          {sightseeingCards.length > 0 && (
             <section className="dsRB-fade" style={{ '--d': '0.28s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">EXPLORE</p>
               <p className="text-xs sm:text-sm text-zinc-600 mb-4 leading-relaxed">
                 {top1.club.prefecture} の見どころ。観戦のついでにどうぞ。
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {sightseeing.map((spot) => (
-                  <a
-                    key={spot}
-                    href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(spot)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block border border-black/10 hover:border-black px-4 py-3 rounded-lg bg-white transition-colors group"
-                  >
-                    <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-1">
-                      {top1.club.prefecture}
-                    </p>
-                    <p className="text-sm font-bold leading-snug flex items-center justify-between">
-                      <span>{spot}</span>
-                      <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">→</span>
-                    </p>
-                  </a>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sightseeingCards.map(({ title, image, extract }) => {
+                  const shown = displayTitle(title)
+                  return (
+                    <a
+                      key={title}
+                      href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(shown)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex flex-col overflow-hidden border border-black/10 hover:border-black rounded-lg bg-white transition-colors"
+                    >
+                      {image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={image}
+                          alt={shown}
+                          loading="lazy"
+                          className="w-full aspect-[4/3] object-cover bg-zinc-100 group-hover:scale-[1.03] transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          className="w-full aspect-[4/3] flex items-center justify-center"
+                          style={{
+                            background: `linear-gradient(135deg, ${clubColor}22, ${clubColor}55)`,
+                          }}
+                        >
+                          <span className="text-2xl font-black text-white/70 select-none">
+                            {shown.slice(0, 2)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="px-3 sm:px-4 py-2.5 sm:py-3 flex-1">
+                        <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-1">
+                          {top1.club.prefecture}
+                        </p>
+                        <p className="text-xs sm:text-sm font-bold leading-snug flex items-center justify-between gap-1.5">
+                          <span className="line-clamp-2">{shown}</span>
+                          <span className="text-zinc-400 group-hover:translate-x-1 transition-transform shrink-0">→</span>
+                        </p>
+                        {extract && (
+                          <p className="hidden sm:block text-[11px] text-zinc-500 mt-1.5 leading-snug line-clamp-2">
+                            {extract}
+                          </p>
+                        )}
+                      </div>
+                    </a>
+                  )
+                })}
               </div>
-              <a
-                href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(top1.club.prefecture)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.18em] text-zinc-500 hover:text-zinc-900 transition-colors"
-              >
-                じゃらんで {top1.club.prefecture} の観光地をもっと見る →
-              </a>
+              <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+                <a
+                  href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(top1.club.prefecture)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.18em] text-zinc-500 hover:text-zinc-900 transition-colors"
+                >
+                  じゃらんで {top1.club.prefecture} の観光地をもっと見る →
+                </a>
+                <span className="text-[10px] text-zinc-400">画像: Wikipedia (CC BY-SA)</span>
+              </div>
             </section>
           )}
         </main>
 
         {/* RIGHT COLUMN — DATA STACK */}
-        <aside className="lg:col-span-3 lg:sticky lg:top-10 self-start space-y-7 sm:space-y-8 order-3">
-          {detail?.standings && (
-            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.1s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°02 — NOW</p>
-              <div className="flex items-baseline gap-2">
-                <span className="dsRB-bignum text-6xl font-black tabular-nums leading-none">{detail.standings.rank}</span>
-                <span className="text-sm font-mono text-zinc-500">位 · {detail.standings.group_name}</span>
-              </div>
-              <p className="font-mono text-xs text-zinc-600 mt-3">
-                {detail.standings.win}-{detail.standings.draw}-{detail.standings.lose}
-                <span className="opacity-50 mx-2">·</span>
-                {detail.standings.points}pt
-              </p>
-              {detail.standings.form && (
-                <div className="flex gap-1.5 mt-3">
-                  {detail.standings.form.slice(-5).split('').map((c, i) => (
-                    <span
-                      key={i}
-                      className="dsRB-form-badge inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-bold text-white"
-                      style={{
-                        backgroundColor: c === 'W' ? '#22c55e' : c === 'D' ? '#71717a' : '#f97316',
-                        '--delay': `${0.4 + i * 0.08}s`,
-                      }}
-                    >
-                      {c === 'W' ? '勝' : c === 'D' ? '分' : '敗'}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+        <aside className="lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 sm:space-y-10 order-3">
+          {/* N°02 — STANDINGS (redesigned) */}
+          {detail?.standings && <StandingsCard standings={detail.standings} clubColor={clubColor} />}
 
+          {/* N°03 — UPCOMING (redesigned) */}
           {detail?.upcomingMatches?.length > 0 && (
-            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.2s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">N°03 — NEXT</p>
-              {detail.upcomingMatches.slice(0, 3).map((m) => {
-                const opp = m.home_team_id === teamId ? m.away_name : m.home_name
-                return (
-                  <div key={m.id} className="text-sm">
-                    <p className="font-mono text-[10px] text-zinc-500">{fmtDate(m.date)} · {m.home_team_id === teamId ? 'HOME' : 'AWAY'}</p>
-                    <p className="font-bold leading-snug">vs {opp}</p>
-                  </div>
-                )
-              })}
-              {clubMeta.ticketUrl && (
-                <a
-                  href={clubMeta.ticketUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.18em] text-zinc-500 hover:text-zinc-900 border-t border-black/10 pt-3 transition-colors"
-                >
-                  Jリーグチケット で買う →
-                </a>
-              )}
+            <UpcomingCard
+              matches={detail.upcomingMatches.slice(0, 3)}
+              teamId={teamId}
+              clubColor={clubColor}
+              ticketUrl={clubMeta.ticketUrl}
+            />
+          )}
+
+          {/* N°04 — 主なOB選手 */}
+          {alumni.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°04 — 主なOB選手</p>
+              <ul className="space-y-1">
+                {alumni.map((name) => (
+                  <li key={name} className="text-sm font-bold leading-tight flex items-center gap-2">
+                    <span
+                      className="inline-block w-1 h-3.5 rounded-full shrink-0"
+                      style={{ backgroundColor: clubColor, opacity: 0.4 }}
+                    />
+                    <span className="truncate">{name}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
-          {detail?.keyPlayers?.length > 0 && (
-            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-2" style={{ '--d': '0.3s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-2">N°04 — KEY PLAYERS</p>
-              {detail.keyPlayers.map((p) => (
-                <div key={p.id} className="text-sm flex items-baseline gap-2">
-                  <span className="font-mono text-[10px] text-zinc-500 w-10">
-                    {p.no != null ? `#${p.no}` : ''}
-                  </span>
-                  <span className="font-bold flex-1 truncate">{p.name_ja}</span>
-                  <span className="font-mono text-[10px] text-zinc-500">{p.goals}G</span>
-                </div>
-              ))}
+          {/* N°05 — 海外でプレー中 */}
+          {overseas.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°05 — 海外でプレー中</p>
+              <ul className="space-y-2.5">
+                {overseas.map((p) => (
+                  <li key={p.name} className="leading-tight">
+                    <p className="text-sm font-bold">{p.name}</p>
+                    <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
+                      {p.club}
+                      {p.country && <span className="opacity-60"> · {p.country}</span>}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </aside>
@@ -622,15 +603,218 @@ export default async function ResultPage({ params, searchParams }) {
   )
 }
 
-function FlavorRow({ label, items }) {
+/**
+ * 右カラム最上段の順位カード。
+ * クラブカラーの帯と大きな順位、前節からの delta、得失点、直近5の勝敗を一枚にまとめる。
+ */
+function StandingsCard({ standings, clubColor }) {
+  const delta =
+    standings.prev_rank != null && standings.rank != null
+      ? standings.prev_rank - standings.rank
+      : 0
+  const gd = (standings.goals_for ?? 0) - (standings.goals_against ?? 0)
+  const formArr = (standings.form ?? '').slice(-5).split('')
+
   return (
-    <div>
-      <p className="text-[9px] font-mono tracking-[0.25em] text-zinc-500 mb-1">{label}</p>
-      <ul className="text-xs text-zinc-700 leading-relaxed">
-        {items.map((it) => (
-          <li key={it} className="truncate">{it}</li>
-        ))}
-      </ul>
+    <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
+      <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">
+        N°02 — STANDINGS
+        {standings.group_name && (
+          <span className="opacity-50 ml-2">{standings.group_name}</span>
+        )}
+      </p>
+      {/* 順位 + delta */}
+      <div
+        className="relative overflow-hidden rounded-lg px-4 pt-4 pb-3 text-white"
+        style={{ backgroundColor: clubColor }}
+      >
+        <div className="flex items-end justify-between">
+          <div className="leading-none">
+            <span className="dsRB-bignum text-[5.5rem] font-black tabular-nums">
+              {standings.rank}
+            </span>
+            <span className="text-2xl font-black opacity-80 ml-1">位</span>
+          </div>
+          {delta !== 0 && (
+            <div className="flex items-center gap-1 pb-3 pr-1">
+              <span className={`text-xl font-black ${delta > 0 ? 'text-white' : 'text-white/85'}`}>
+                {delta > 0 ? '▲' : '▼'}
+              </span>
+              <span className="text-xl font-black tabular-nums">{Math.abs(delta)}</span>
+            </div>
+          )}
+          {delta === 0 && standings.prev_rank != null && (
+            <span className="text-xs font-mono opacity-70 pb-3 pr-1">—</span>
+          )}
+        </div>
+        <p className="text-[10px] font-mono tracking-[0.18em] opacity-85 mt-1">
+          {standings.played}試合 · {standings.points}pt
+        </p>
+      </div>
+
+      {/* W-D-L grid */}
+      <div className="grid grid-cols-3 gap-px bg-black/5 mt-px rounded-b-lg overflow-hidden">
+        <StatCell label="勝" value={standings.win} color="#22c55e" />
+        <StatCell label="分" value={standings.draw} color="#71717a" />
+        <StatCell label="敗" value={standings.lose} color="#f97316" />
+      </div>
+
+      {/* Goals */}
+      <div className="flex items-baseline justify-between mt-4 text-xs">
+        <span className="font-mono text-[10px] text-zinc-500 tracking-[0.15em]">GOALS</span>
+        <span className="font-mono tabular-nums">
+          <span className="font-bold text-zinc-700">{standings.goals_for}</span>
+          <span className="text-zinc-400 mx-1">/</span>
+          <span className="text-zinc-500">{standings.goals_against}</span>
+          <span className={`ml-2 font-black ${gd > 0 ? 'text-emerald-600' : gd < 0 ? 'text-rose-600' : 'text-zinc-500'}`}>
+            {gd > 0 ? '+' : ''}{gd}
+          </span>
+        </span>
+      </div>
+
+      {/* 直近5試合 */}
+      {formArr.length > 0 && (
+        <div className="mt-4">
+          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-2">直近5試合</p>
+          <div className="flex gap-1.5">
+            {formArr.map((c, i) => (
+              <span
+                key={i}
+                className="dsRB-form-badge inline-flex items-center justify-center w-7 h-7 rounded text-xs font-black text-white"
+                style={{
+                  backgroundColor: c === 'W' ? '#22c55e' : c === 'D' ? '#71717a' : '#f97316',
+                  '--delay': `${0.4 + i * 0.08}s`,
+                }}
+              >
+                {c === 'W' ? '勝' : c === 'D' ? '分' : '敗'}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StatCell({ label, value, color }) {
+  return (
+    <div className="bg-white flex items-baseline justify-center gap-1 py-2">
+      <span className="text-xl font-black tabular-nums" style={{ color }}>
+        {value ?? 0}
+      </span>
+      <span className="text-[10px] font-bold text-zinc-500">{label}</span>
+    </div>
+  )
+}
+
+/**
+ * 次の対戦カード。1 試合目は大きく countdown 付き、2-3 試合目は条目で。
+ */
+function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
+  if (!matches.length) return null
+  const [first, ...rest] = matches
+  return (
+    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-4" style={{ '--d': '0.2s' }}>
+      <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">N°03 — NEXT MATCH</p>
+
+      {/* FIRST: hero */}
+      <MatchHero match={first} teamId={teamId} clubColor={clubColor} />
+
+      {/* REST: condensed lines */}
+      {rest.length > 0 && (
+        <div className="space-y-2.5 border-t border-black/10 pt-3">
+          {rest.map((m) => (
+            <MatchLine key={m.id} match={m} teamId={teamId} />
+          ))}
+        </div>
+      )}
+
+      {ticketUrl && (
+        <a
+          href={ticketUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-flex items-center gap-2 text-[11px] font-mono tracking-[0.18em] text-zinc-500 hover:text-zinc-900 transition-colors"
+        >
+          Jリーグチケット で買う →
+        </a>
+      )}
+    </div>
+  )
+}
+
+function MatchHero({ match, teamId, clubColor }) {
+  const isHome = match.home_team_id === teamId
+  const oppName = isHome ? match.away_name : match.home_name
+  const oppColor = isHome ? match.away_color : match.home_color
+  const t = fmtMatchDate(match.date)
+  return (
+    <div className="rounded-lg overflow-hidden border border-black/10 bg-white">
+      {/* HOME/AWAY ribbon */}
+      <div
+        className="px-3 py-1.5 flex items-center justify-between text-[10px] font-mono tracking-[0.18em] text-white"
+        style={{ backgroundColor: isHome ? clubColor : '#0e0e10' }}
+      >
+        <span>{isHome ? 'HOME' : 'AWAY'}</span>
+        {t.daysUntil > 0 ? (
+          <span className="opacity-90">あと {t.daysUntil} 日</span>
+        ) : (
+          <span className="opacity-90">今日</span>
+        )}
+      </div>
+      <div className="px-4 py-3.5 space-y-2.5">
+        {/* date row */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-black tabular-nums leading-none">
+            {t.month}/{t.day}
+          </span>
+          <span className="text-xs font-mono text-zinc-500">({t.dow})</span>
+          <span className="ml-auto text-sm font-mono tabular-nums text-zinc-700">
+            {t.hh}:{t.mm}
+          </span>
+        </div>
+        {/* opponent */}
+        <div className="flex items-center gap-2.5">
+          <span
+            className="block w-1 h-7 rounded-full shrink-0"
+            style={{ backgroundColor: oppColor ?? '#a1a1aa' }}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-mono text-zinc-500 leading-none mb-0.5">vs</p>
+            <p className="text-sm font-bold leading-tight truncate">{oppName}</p>
+          </div>
+        </div>
+        {match.venue_name_ja && (
+          <p className="text-[11px] text-zinc-500 truncate">{match.venue_name_ja}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MatchLine({ match, teamId }) {
+  const isHome = match.home_team_id === teamId
+  const oppName = isHome ? match.away_name : match.home_name
+  const oppColor = isHome ? match.away_color : match.home_color
+  const t = fmtMatchDate(match.date)
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="text-right shrink-0 w-12">
+        <p className="text-xs font-bold tabular-nums leading-none">
+          {t.month}/{t.day}
+        </p>
+        <p className="text-[9px] font-mono text-zinc-500 mt-0.5">({t.dow})</p>
+      </div>
+      <span
+        className="block w-0.5 h-7 rounded-full shrink-0"
+        style={{ backgroundColor: oppColor ?? '#a1a1aa' }}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
+          {isHome ? 'HOME' : 'AWAY'} · {t.hh}:{t.mm}
+        </p>
+        <p className="text-xs font-bold truncate leading-tight">vs {oppName}</p>
+      </div>
     </div>
   )
 }
