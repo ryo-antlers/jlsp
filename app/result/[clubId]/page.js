@@ -357,7 +357,7 @@ export default async function ResultPage({ params, searchParams }) {
                         src={mascotInfo.image}
                         alt={clubMeta.mascot.name}
                         loading="lazy"
-                        className="w-full aspect-square object-cover"
+                        className="w-full aspect-square object-cover object-top"
                       />
                     </a>
                   ) : (
