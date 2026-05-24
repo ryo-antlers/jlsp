@@ -473,10 +473,15 @@ export default async function ResultPage({ params, searchParams }) {
             </div>
           )}
 
-          {/* N°05 — 海外でプレー中 */}
+          {/* N°05 — このクラブでプレーした選手 (現在海外) */}
           {overseas.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°05 — 海外でプレー中</p>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-1">
+                N°05 — このクラブでプレーした選手
+              </p>
+              <p className="text-[10px] text-zinc-500 mb-3">
+                現在 海外でプレー中
+              </p>
               <ul className="space-y-2.5">
                 {overseas.map((p) => (
                   <li key={p.name} className="leading-tight">
