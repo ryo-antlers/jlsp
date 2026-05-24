@@ -230,7 +230,7 @@ export default async function ResultPage({ params, searchParams }) {
         {/* LEFT COLUMN */}
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
           <div className="dsRB-fade" style={{ '--d': '0s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°01 — TYPE</p>
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">TYPE</p>
             <div className="border-t-2 border-[#c7384d] pt-4">
               <p className="text-5xl xl:text-6xl font-black tracking-[0.04em] leading-none" style={{ color: '#c7384d' }}>
                 {userTypeCode ?? '----'}
@@ -480,10 +480,10 @@ export default async function ResultPage({ params, searchParams }) {
 
         {/* RIGHT COLUMN — DATA STACK */}
         <aside className="lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 sm:space-y-10 order-3">
-          {/* N°02 — STANDINGS (redesigned) */}
+          {/* STANDINGS */}
           {detail?.standings && <StandingsCard standings={detail.standings} clubColor={clubColor} />}
 
-          {/* N°03 — UPCOMING (redesigned) */}
+          {/* NEXT MATCH */}
           {detail?.upcomingMatches?.length > 0 && (
             <UpcomingCard
               matches={detail.upcomingMatches.slice(0, 3)}
@@ -493,10 +493,10 @@ export default async function ResultPage({ params, searchParams }) {
             />
           )}
 
-          {/* N°04 — 主なOB選手 */}
+          {/* 主なOB選手 */}
           {alumni.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">N°04 — 主なOB選手</p>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">主なOB選手</p>
               <ul className="space-y-1">
                 {alumni.map((name) => (
                   <li key={name} className="text-sm font-bold leading-tight flex items-center gap-2">
@@ -511,11 +511,11 @@ export default async function ResultPage({ params, searchParams }) {
             </div>
           )}
 
-          {/* N°05 — このクラブでプレーした選手 (現在海外) */}
+          {/* このクラブでプレーした選手 (現在海外) */}
           {overseas.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-1">
-                N°05 — このクラブでプレーした選手
+                このクラブでプレーした選手
               </p>
               <p className="text-[10px] text-zinc-500 mb-3">
                 現在 海外でプレー中
@@ -665,7 +665,7 @@ function StandingsCard({ standings, clubColor }) {
   return (
     <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
       <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">
-        N°02 — STANDINGS
+        STANDINGS
         {standings.group_name && (
           <span className="opacity-50 ml-2">{standings.group_name}</span>
         )}
@@ -762,7 +762,7 @@ function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
   const [first, ...rest] = matches
   return (
     <div className="dsRB-fade border-t border-black/10 pt-5 space-y-4" style={{ '--d': '0.2s' }}>
-      <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">N°03 — NEXT MATCH</p>
+      <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">NEXT MATCH</p>
 
       {/* FIRST: hero */}
       <MatchHero match={first} teamId={teamId} clubColor={clubColor} />
