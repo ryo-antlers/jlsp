@@ -1,5 +1,6 @@
 import { CLUBS } from '@/lib/jlsp/clubs'
 import { CLUB_META } from '@/lib/jlsp/club-meta'
+import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { loadAllClubMetaOverrides } from '@/lib/jlsp/club-meta-loader'
 import { getWikiThumbnail } from '@/lib/jlsp/wiki-image'
 import ClubMetaClient from './client'
@@ -30,6 +31,9 @@ async function loadData() {
           ? getWikiThumbnail(mascot.wikiTitle ?? mascot.name).catch(() => null)
           : Promise.resolve(null),
       ])
+      const staticAccess = meta.access ?? null
+      const staticAwayTravel = meta.awayTravel?.fromTokyo ?? null
+      const staticSightseeing = SIGHTSEEING_SPOTS[c.id] ?? null
       return {
         id: c.id,
         name: c.name,
@@ -40,10 +44,16 @@ async function loadData() {
         staticMascotName: mascot?.name ?? '',
         staticMascotWikiTitle: mascot?.wikiTitle ?? '',
         staticMascotDescription: mascot?.description ?? '',
+        staticAccess,           // { station, walkMinutes, note } | null
+        staticAwayTravel,       // { hours, yen, transport, note } | null
+        staticSightseeing,      // string[] | null
         overrideDescriptionLong: o?.description_long ?? '',
         overrideMascotName: o?.mascot_name ?? '',
         overrideMascotWikiTitle: o?.mascot_wiki_title ?? '',
         overrideMascotDescription: o?.mascot_description ?? '',
+        overrideAccess: o?.access ?? null,
+        overrideAwayTravel: o?.away_travel ?? null,
+        overrideSightseeing: Array.isArray(o?.sightseeing) ? o.sightseeing : null,
         overrideUpdatedAt: o?.updated_at ?? null,
         clubWikiTitle: clubWiki?.title ?? c.name,
         clubWikiPageUrl: clubWiki?.pageUrl ?? null,
@@ -61,7 +71,14 @@ async function loadData() {
 export default async function ClubMetaAdminPage() {
   const clubs = await loadData()
   const overriddenCount = clubs.filter(
-    (c) => c.overrideDescriptionLong || c.overrideMascotDescription || c.overrideMascotName || c.overrideMascotWikiTitle,
+    (c) =>
+      c.overrideDescriptionLong ||
+      c.overrideMascotDescription ||
+      c.overrideMascotName ||
+      c.overrideMascotWikiTitle ||
+      c.overrideAccess ||
+      c.overrideAwayTravel ||
+      c.overrideSightseeing,
   ).length
 
   return (

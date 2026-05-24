@@ -30,6 +30,9 @@ export async function POST(req) {
     mascot_name: nonEmpty(body.mascot_name),
     mascot_wiki_title: nonEmpty(body.mascot_wiki_title),
     mascot_description: nonEmpty(body.mascot_description),
+    access: nonEmptyObject(body.access),
+    away_travel: nonEmptyObject(body.away_travel),
+    sightseeing: nonEmptyArray(body.sightseeing),
   }
   const allEmpty = Object.values(fields).every((v) => v == null)
   try {
@@ -50,4 +53,17 @@ function nonEmpty(v) {
   if (typeof v !== 'string') return null
   const t = v.trim()
   return t.length > 0 ? t : null
+}
+function nonEmptyObject(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null
+  const keys = Object.keys(v)
+  if (keys.length === 0) return null
+  // 全 value が null/undefined/空文字なら null 扱い
+  const hasValue = keys.some((k) => v[k] !== null && v[k] !== undefined && v[k] !== '')
+  return hasValue ? v : null
+}
+function nonEmptyArray(v) {
+  if (!Array.isArray(v) || v.length === 0) return null
+  const cleaned = v.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)
+  return cleaned.length > 0 ? cleaned : null
 }

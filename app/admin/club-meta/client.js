@@ -68,6 +68,15 @@ function ClubEditor({ club }) {
   const [mascotDescription, setMascotDescription] = useState(
     club.overrideMascotDescription || club.staticMascotDescription,
   )
+  const [access, setAccess] = useState(
+    club.overrideAccess ?? club.staticAccess ?? { station: '', walkMinutes: '', note: '' },
+  )
+  const [awayTravel, setAwayTravel] = useState(
+    club.overrideAwayTravel ?? club.staticAwayTravel ?? { hours: '', yen: '', transport: '', note: '' },
+  )
+  const [sightseeingText, setSightseeingText] = useState(
+    (club.overrideSightseeing ?? club.staticSightseeing ?? []).join('\n'),
+  )
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [pending, startTransition] = useTransition()
@@ -78,6 +87,15 @@ function ClubEditor({ club }) {
   function loadWikiMascotDesc() { if (club.mascotWikiExtract) setMascotDescription(club.mascotWikiExtract) }
   function loadStaticMascotName() { setMascotName(club.staticMascotName) }
   function loadStaticMascotWikiTitle() { setMascotWikiTitle(club.staticMascotWikiTitle) }
+  function loadStaticAccess() {
+    setAccess(club.staticAccess ?? { station: '', walkMinutes: '', note: '' })
+  }
+  function loadStaticAwayTravel() {
+    setAwayTravel(club.staticAwayTravel ?? { hours: '', yen: '', transport: '', note: '' })
+  }
+  function loadStaticSightseeing() {
+    setSightseeingText((club.staticSightseeing ?? []).join('\n'))
+  }
 
   function clearAll() {
     if (!confirm('この行の override をクリアして静的デフォルトに戻しますか？')) return
@@ -110,6 +128,22 @@ function ClubEditor({ club }) {
       setSaved(false)
       setError(null)
       try {
+        // 観光スポット: 改行区切り → 配列。空行は除外
+        const sightseeingArr = sightseeingText
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean)
+        const sightseeingSameAsStatic =
+          JSON.stringify(sightseeingArr) === JSON.stringify(club.staticSightseeing ?? [])
+
+        const accessObj = normalizeAccess(access)
+        const accessSameAsStatic =
+          JSON.stringify(accessObj) === JSON.stringify(club.staticAccess ?? null)
+
+        const awayObj = normalizeAwayTravel(awayTravel)
+        const awaySameAsStatic =
+          JSON.stringify(awayObj) === JSON.stringify(club.staticAwayTravel ?? null)
+
         const res = await fetch('/api/admin/club-meta', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -130,6 +164,12 @@ function ClubEditor({ club }) {
               mascotDescription && mascotDescription !== club.staticMascotDescription
                 ? mascotDescription
                 : null,
+            access: !accessObj || accessSameAsStatic ? null : accessObj,
+            away_travel: !awayObj || awaySameAsStatic ? null : awayObj,
+            sightseeing:
+              sightseeingArr.length === 0 || sightseeingSameAsStatic
+                ? null
+                : sightseeingArr,
           }),
         })
         if (!res.ok) throw new Error(await res.text())
@@ -251,6 +291,114 @@ function ClubEditor({ club }) {
         <CharCount text={mascotDescription} />
       </section>
 
+      {/* STADIUM / ACCESS */}
+      <section className="border-t border-zinc-800 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
+            スタジアム アクセス
+          </p>
+          <SmallBtn onClick={loadStaticAccess}>静的に戻す ←</SmallBtn>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Field label="最寄駅">
+            <input
+              type="text"
+              value={access.station ?? ''}
+              onChange={(e) => setAccess({ ...access, station: e.target.value })}
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="鹿島サッカースタジアム駅"
+            />
+          </Field>
+          <Field label="徒歩 (分)">
+            <input
+              type="number"
+              value={access.walkMinutes ?? ''}
+              onChange={(e) =>
+                setAccess({ ...access, walkMinutes: e.target.value === '' ? '' : Number(e.target.value) })
+              }
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="7"
+            />
+          </Field>
+          <Field label="補足">
+            <input
+              type="text"
+              value={access.note ?? ''}
+              onChange={(e) => setAccess({ ...access, note: e.target.value })}
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="試合日のみ臨時開設駅"
+            />
+          </Field>
+        </div>
+
+        {/* AWAY TRAVEL */}
+        <div className="flex items-center justify-between mt-5 mb-2">
+          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
+            東京駅からのアクセス目安 (AWAY TRAVEL)
+          </p>
+          <SmallBtn onClick={loadStaticAwayTravel}>静的に戻す ←</SmallBtn>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Field label="所要時間">
+            <input
+              type="text"
+              value={awayTravel.hours ?? ''}
+              onChange={(e) => setAwayTravel({ ...awayTravel, hours: e.target.value })}
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="約 2 時間"
+            />
+          </Field>
+          <Field label="料金 (¥)">
+            <input
+              type="number"
+              value={awayTravel.yen ?? ''}
+              onChange={(e) =>
+                setAwayTravel({ ...awayTravel, yen: e.target.value === '' ? '' : Number(e.target.value) })
+              }
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="5500"
+            />
+          </Field>
+          <Field label="交通手段" colSpan={2}>
+            <input
+              type="text"
+              value={awayTravel.transport ?? ''}
+              onChange={(e) => setAwayTravel({ ...awayTravel, transport: e.target.value })}
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="高速バス (東京駅八重洲口直通)"
+            />
+          </Field>
+          <Field label="補足" colSpan={4}>
+            <input
+              type="text"
+              value={awayTravel.note ?? ''}
+              onChange={(e) => setAwayTravel({ ...awayTravel, note: e.target.value })}
+              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
+              placeholder="電車だと鹿島臨海鉄道経由で乗継複雑、バス推奨"
+            />
+          </Field>
+        </div>
+      </section>
+
+      {/* SIGHTSEEING */}
+      <section className="border-t border-zinc-800 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
+            観光スポット (1 行 1 件、Wikipedia 記事タイトルがそのまま検索キーに)
+          </p>
+          <SmallBtn onClick={loadStaticSightseeing}>静的に戻す ←</SmallBtn>
+        </div>
+        <textarea
+          value={sightseeingText}
+          onChange={(e) => setSightseeingText(e.target.value)}
+          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm font-mono text-zinc-100 leading-relaxed resize-y min-h-[150px]"
+          placeholder={'鹿島神宮\n息栖神社\n大洗磯前神社'}
+        />
+        <p className="text-[10px] text-zinc-500 mt-1">
+          現在 {sightseeingText.split('\n').filter((s) => s.trim()).length} 件
+        </p>
+      </section>
+
       {/* ACTIONS */}
       <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
         <button
@@ -352,4 +500,36 @@ function SmallBtn({ children, onClick }) {
       {children}
     </button>
   )
+}
+
+function Field({ label, children, colSpan = 1 }) {
+  return (
+    <div className={colSpan === 2 ? 'sm:col-span-2' : colSpan === 4 ? 'sm:col-span-4' : ''}>
+      <label className="text-[10px] text-zinc-500 mb-1 block">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+// 全フィールド空なら null を返す (= override クリア扱い)
+function normalizeAccess(a) {
+  if (!a) return null
+  const station = (a.station ?? '').toString().trim()
+  const note = (a.note ?? '').toString().trim()
+  const walkRaw = a.walkMinutes
+  const walk =
+    walkRaw === '' || walkRaw == null || Number.isNaN(Number(walkRaw)) ? null : Number(walkRaw)
+  if (!station && !note && walk == null) return null
+  return { station: station || null, walkMinutes: walk, note: note || null }
+}
+function normalizeAwayTravel(a) {
+  if (!a) return null
+  const hours = (a.hours ?? '').toString().trim()
+  const transport = (a.transport ?? '').toString().trim()
+  const note = (a.note ?? '').toString().trim()
+  const yenRaw = a.yen
+  const yen =
+    yenRaw === '' || yenRaw == null || Number.isNaN(Number(yenRaw)) ? null : Number(yenRaw)
+  if (!hours && !transport && !note && yen == null) return null
+  return { hours: hours || null, yen, transport: transport || null, note: note || null }
 }
