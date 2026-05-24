@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { loadResultData } from '@/lib/jlsp/result-page-data'
 import { TYPE_META } from '@/lib/jlsp/type-meta'
-import { CLUB_META } from '@/lib/jlsp/club-meta'
+// CLUB_META は loader 経由で DB override を反映済みのものを result-page-data から受け取る
 import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnail, getWikiThumbnails } from '@/lib/jlsp/wiki-image'
@@ -167,7 +167,7 @@ export default async function ResultPage({ params, searchParams }) {
   if (!data) notFound()
   const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, userType, userTypeCode, userVector, teamId } = data
   const clubColor = top1.club.color
-  const clubMeta = CLUB_META[top1.club.id] ?? {}
+  const clubMeta = data.clubMeta ?? {}
   const alumni = NOTABLE_ALUMNI[top1.club.id] ?? []
   // DB に海外組データがあれば DB を信頼 (per-club 空 = 真に海外組ゼロ)。
   // DB 全体が空 (= migration 未適用 / 初回 sync 待ち) のときだけ静的 fallback。
