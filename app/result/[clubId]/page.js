@@ -5,7 +5,7 @@ import { TYPE_META } from '@/lib/jlsp/type-meta'
 import { CLUB_META } from '@/lib/jlsp/club-meta'
 import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
-import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
+import { getWikiThumbnail, getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -178,8 +178,13 @@ export default async function ResultPage({ params, searchParams }) {
   const sightseeing =
     SIGHTSEEING_SPOTS[top1.club.id] ?? parseSightseeing(top1.club.sightseeing)
   // Wikipedia (ja) からサムネ画像を並列取得。失敗したものは image:null で返るので
-  // テキストカードに自動 fallback できる。
-  const sightseeingCards = await getWikiThumbnails(sightseeing)
+  // テキストカードに自動 fallback できる。マスコット画像も同時取得。
+  const mascotWikiTitle =
+    clubMeta.mascot?.wikiTitle ?? clubMeta.mascot?.name ?? null
+  const [sightseeingCards, mascotInfo] = await Promise.all([
+    getWikiThumbnails(sightseeing),
+    mascotWikiTitle ? getWikiThumbnail(mascotWikiTitle) : Promise.resolve(null),
+  ])
   const description = clubMeta.descriptionLong ?? top1.club.description
   const lat = detail?.stadium?.home_stadium_lat
   const lng = detail?.stadium?.home_stadium_lng
@@ -338,10 +343,43 @@ export default async function ResultPage({ params, searchParams }) {
             <section className="dsRB-fade" style={{ '--d': '0.24s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MASCOT</p>
               <div className="border-t border-black/10 pt-6">
-                <p className="text-xl sm:text-2xl font-black mb-2" style={{ color: clubColor }}>
-                  {clubMeta.mascot.name}
-                </p>
-                <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">{clubMeta.mascot.description}</p>
+                <div className="flex gap-4 sm:gap-5 items-start">
+                  {mascotInfo?.image ? (
+                    <a
+                      href={mascotInfo.pageUrl ?? `https://ja.wikipedia.org/wiki/${encodeURIComponent(mascotWikiTitle)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 block w-28 sm:w-36 rounded-lg overflow-hidden bg-zinc-100 ring-1 ring-black/5 hover:ring-black/30 transition"
+                      title="Wikipedia で見る"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={mascotInfo.image}
+                        alt={clubMeta.mascot.name}
+                        loading="lazy"
+                        className="w-full aspect-square object-cover"
+                      />
+                    </a>
+                  ) : (
+                    <div
+                      className="shrink-0 w-28 sm:w-36 aspect-square rounded-lg flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, ${clubColor}22, ${clubColor}55)` }}
+                    >
+                      <span className="text-3xl font-black text-white/80 select-none">
+                        {clubMeta.mascot.name.slice(0, 1)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl sm:text-2xl font-black mb-2 leading-tight" style={{ color: clubColor }}>
+                      {clubMeta.mascot.name}
+                    </p>
+                    <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">{clubMeta.mascot.description}</p>
+                    {mascotInfo?.image && (
+                      <p className="text-[10px] text-zinc-400 mt-3">画像: Wikipedia (CC BY-SA)</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
           )}
