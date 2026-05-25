@@ -576,13 +576,13 @@ export default async function ResultPage({ params, searchParams }) {
         </div>
       </div>
 
-      {/* MORE LINKS (観戦ガイド / Jチケ / toto) */}
+      {/* MORE LINKS (観戦ガイド / Jチケ / WINNER) */}
       <div className="border-t border-black/10">
         <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
           <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">MORE</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <ExternalLink
-              href="https://www.jleague.jp/aboutj/howto/"
+              href="https://www.jleague.jp/special/beginner/"
               label="観戦初心者ガイド"
               sub="J リーグ公式のはじめてガイド"
             />
@@ -594,8 +594,8 @@ export default async function ResultPage({ params, searchParams }) {
               />
             )}
             <ExternalLink
-              href="https://store.toto-dream.com/dcs/subos/screen/pi01/spin010/PGSPIN01001InitDispatchAction.do"
-              label="toto / BIG"
+              href="https://store.toto-dream.com/dcs/subos/screen/pi31/spin049/PGSPIN04901InitWinnerTop.form?channelId=03"
+              label="WINNER"
               sub="J リーグを予想して当てる"
             />
           </div>
