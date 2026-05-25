@@ -370,33 +370,12 @@ export default async function ResultPage({ params, searchParams }) {
             </section>
           )}
 
-          {/* OFFICIAL LINKS */}
-          {hasOfficial && (
-            <section className="dsRB-fade" style={{ '--d': '0.26s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">OFFICIAL</p>
-              <div className="border-t border-black/10 pt-6">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {clubMeta.official.hp && (
-                    <OfficialLink href={clubMeta.official.hp} label="公式 HP" />
-                  )}
-                  {clubMeta.official.x && (
-                    <OfficialLink href={clubMeta.official.x} label="X (Twitter)" />
-                  )}
-                  {clubMeta.official.instagram && (
-                    <OfficialLink href={clubMeta.official.instagram} label="Instagram" />
-                  )}
-                </div>
-              </div>
-            </section>
-          )}
-
-
           {/* EXPLORE */}
           {sightseeingCards.length > 0 && (
             <section className="dsRB-fade" style={{ '--d': '0.28s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">EXPLORE</p>
               <p className="text-xs sm:text-sm text-zinc-600 mb-4 leading-relaxed">
-                {top1.club.prefecture} の見どころ。観戦のついでにどうぞ。
+                {detail?.stadium?.home_stadium_name ?? top1.club.prefecture} 観戦のついでに。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {sightseeingCards.map(({ title, image, extract }) => {
@@ -467,6 +446,22 @@ export default async function ResultPage({ params, searchParams }) {
           {/* STANDINGS */}
           {detail?.standings && <StandingsCard standings={detail.standings} clubColor={clubColor} />}
 
+          {/* OFFICIAL (HP / X / Instagram を縦積み) */}
+          {hasOfficial && (
+            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-2" style={{ '--d': '0.18s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">OFFICIAL</p>
+              {clubMeta.official.hp && (
+                <OfficialRow href={clubMeta.official.hp} label="公式 HP" clubColor={clubColor} />
+              )}
+              {clubMeta.official.x && (
+                <OfficialRow href={clubMeta.official.x} label="X (Twitter)" clubColor={clubColor} />
+              )}
+              {clubMeta.official.instagram && (
+                <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />
+              )}
+            </div>
+          )}
+
           {/* NEXT MATCH */}
           {detail?.upcomingMatches?.length > 0 && (
             <UpcomingCard
@@ -523,34 +518,24 @@ export default async function ResultPage({ params, searchParams }) {
         </aside>
       </div>
 
-      {/* BOTTOM STRIP — TOP3 / BOTTOM3 */}
+      {/* BOTTOM STRIP — TOP3 / BOTTOM3 (bar chart) */}
       <div className="border-t border-black/10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12">
           <div>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">TOP 3 RECOMMENDED</p>
-            <ol className="space-y-2.5">
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">TOP 3 RECOMMENDED</p>
+            <div className="space-y-5">
               {top3.map((m, i) => (
-                <li key={m.club.id} className="flex items-center gap-3 border-b border-black/5 pb-2.5 last:border-0">
-                  <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
-                  <span className="w-1 h-6 rounded-full" style={{ backgroundColor: m.club.color }} />
-                  <span className="flex-1 text-base font-bold truncate">{m.club.name}</span>
-                  <span className="font-mono text-base font-black tabular-nums" style={{ color: m.club.color }}>{pct(m.score)}%</span>
-                </li>
+                <MatchBar key={m.club.id} rank={i + 1} club={m.club} score={m.score} variant="top" />
               ))}
-            </ol>
+            </div>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">BOTTOM 3 MISMATCH</p>
-            <ol className="space-y-2.5">
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">BOTTOM 3 MISMATCH</p>
+            <div className="space-y-5">
               {worst3.map((m, i) => (
-                <li key={m.club.id} className="flex items-center gap-3 border-b border-black/5 pb-2.5 last:border-0">
-                  <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
-                  <span className="w-1 h-6 rounded-full opacity-50" style={{ backgroundColor: m.club.color }} />
-                  <span className="flex-1 text-base font-bold text-zinc-600 truncate">{m.club.name}</span>
-                  <span className="font-mono text-base text-zinc-500 tabular-nums">{pct(m.score)}%</span>
-                </li>
+                <MatchBar key={m.club.id} rank={i + 1} club={m.club} score={m.score} variant="bottom" />
               ))}
-            </ol>
+            </div>
           </div>
         </div>
       </div>
@@ -782,40 +767,30 @@ function MatchHero({ match, teamId, clubColor }) {
   const oppColor = isHome ? match.away_color : match.home_color
   const t = fmtMatchDate(match.date)
   return (
-    <div className="rounded-lg overflow-hidden border border-black/10 bg-white">
-      {/* HOME/AWAY ribbon */}
-      <div
-        className="px-3 py-1.5 flex items-center justify-between text-[10px] font-mono tracking-[0.18em] text-white"
-        style={{ backgroundColor: isHome ? clubColor : '#0e0e10' }}
-      >
-        <span>{isHome ? 'HOME' : 'AWAY'}</span>
-        {t.daysUntil > 0 ? (
-          <span className="opacity-90">あと {t.daysUntil} 日</span>
-        ) : (
-          <span className="opacity-90">今日</span>
-        )}
-      </div>
-      <div className="px-4 py-3.5 space-y-2.5">
-        {/* date row */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-black tabular-nums leading-none">
-            {t.month}/{t.day}
-          </span>
-          <span className="text-xs font-mono text-zinc-500">({t.dow})</span>
+    <div className="rounded-lg overflow-hidden">
+      {/* メイン: クラブカラー塗りの大ブロック (STANDINGS と同じ視覚的重さ) */}
+      <div className="px-4 pt-4 pb-3 text-white" style={{ backgroundColor: clubColor }}>
+        <div className="flex items-center justify-between text-[10px] font-mono tracking-[0.18em] opacity-85">
+          <span>{isHome ? 'HOME' : 'AWAY'}</span>
+          <span>{t.daysUntil > 0 ? `あと ${t.daysUntil} 日` : '今日'}</span>
         </div>
-        {/* opponent */}
+        <div className="flex items-baseline gap-2 mt-1 leading-none">
+          <span className="text-[3.75rem] font-black tabular-nums">{t.month}/{t.day}</span>
+          <span className="text-sm font-mono opacity-85">({t.dow})</span>
+        </div>
+      </div>
+      {/* 対戦相手: 白背景、相手色アクセント */}
+      <div className="bg-white border border-t-0 border-black/10 px-4 py-3 rounded-b-lg">
+        <p className="text-[10px] font-mono text-zinc-500 leading-none mb-1.5">vs</p>
         <div className="flex items-center gap-2.5">
           <span
-            className="block w-1 h-7 rounded-full shrink-0"
+            className="block w-1.5 h-7 rounded-full shrink-0"
             style={{ backgroundColor: oppColor ?? '#a1a1aa' }}
           />
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-mono text-zinc-500 leading-none mb-0.5">vs</p>
-            <p className="text-sm font-bold leading-tight truncate">{oppName}</p>
-          </div>
+          <p className="text-base font-black leading-tight truncate">{oppName}</p>
         </div>
         {match.venue_name_ja && (
-          <p className="text-[11px] text-zinc-500 truncate">{match.venue_name_ja}</p>
+          <p className="text-[11px] text-zinc-500 truncate mt-1.5">{match.venue_name_ja}</p>
         )}
       </div>
     </div>
@@ -862,6 +837,71 @@ function OfficialLink({ href, label }) {
         <span>{label}</span>
         <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
       </p>
+    </a>
+  )
+}
+
+/**
+ * TOP3 / BOTTOM3 用の bar chart 行。
+ *
+ * - rank (1-3) + クラブ名 + score% を表示
+ * - 横棒バーで score を視覚化 (クラブカラー、BOTTOM は opacity 落とす)
+ * - 100% 基準の絶対バー (TOP3 同士 / BOTTOM3 同士の比較がしやすい)
+ */
+function MatchBar({ rank, club, score, variant = 'top' }) {
+  const isBottom = variant === 'bottom'
+  const pctNum = Math.round(score * 100)
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1.5 gap-2">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="font-mono text-xs text-zinc-400 tabular-nums w-4 shrink-0">
+            #{rank}
+          </span>
+          <span
+            className={`text-base sm:text-lg font-bold truncate ${
+              isBottom ? 'text-zinc-600' : ''
+            }`}
+          >
+            {club.name}
+          </span>
+        </div>
+        <span
+          className="font-mono text-xl font-black tabular-nums shrink-0"
+          style={{ color: isBottom ? '#71717a' : club.color }}
+        >
+          {pctNum}%
+        </span>
+      </div>
+      <div className="h-2 bg-black/5 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-[width] duration-700 ease-out"
+          style={{
+            width: `${pctNum}%`,
+            backgroundColor: club.color,
+            opacity: isBottom ? 0.4 : 1,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+/** 右カラム OFFICIAL 用 (narrow column 向けの 1 行レイアウト) */
+function OfficialRow({ href, label, clubColor }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white border border-black/10 hover:border-black/30 transition-colors"
+    >
+      <span
+        className="block w-1 h-5 rounded-full shrink-0"
+        style={{ backgroundColor: clubColor }}
+      />
+      <span className="text-sm font-bold flex-1 truncate">{label}</span>
+      <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
     </a>
   )
 }
