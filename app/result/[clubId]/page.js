@@ -300,14 +300,25 @@ export default async function ResultPage({ params, searchParams }) {
                   </div>
                 )}
                 {mapsUrl && (
-                  <a
-                    href={mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-zinc-700 hover:text-[#0e0e10] border-b border-black/20 hover:border-[#0e0e10] transition-colors pb-0.5"
-                  >
-                    Google Maps で開く →
-                  </a>
+                  <div className="flex flex-wrap gap-2.5">
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=transit`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white transition-opacity hover:opacity-85"
+                      style={{ backgroundColor: clubColor }}
+                    >
+                      📍 現在地からのルート
+                    </a>
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-zinc-700 hover:text-[#0e0e10] border border-black/15 hover:border-[#0e0e10] transition-colors"
+                    >
+                      Google Maps で開く →
+                    </a>
+                  </div>
                 )}
               </div>
             </section>
