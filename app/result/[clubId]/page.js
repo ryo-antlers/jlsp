@@ -726,27 +726,25 @@ function StatCell({ label, value, color }) {
 }
 
 /**
- * 次の対戦カード。1 試合目は大きく countdown 付き、2-3 試合目は条目で。
+ * 次の対戦カード。全試合を MatchLine スタイルで条目表示。
+ * 1 試合目だけ右端に「あと N 日」 countdown を表示してわずかに強調。
  */
 function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
   if (!matches.length) return null
-  const [first, ...rest] = matches
   return (
-    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-4" style={{ '--d': '0.2s' }}>
+    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.2s' }}>
       <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">NEXT MATCH</p>
-
-      {/* FIRST: hero */}
-      <MatchHero match={first} teamId={teamId} clubColor={clubColor} />
-
-      {/* REST: condensed lines */}
-      {rest.length > 0 && (
-        <div className="space-y-2.5 border-t border-black/10 pt-3">
-          {rest.map((m) => (
-            <MatchLine key={m.id} match={m} teamId={teamId} />
-          ))}
-        </div>
-      )}
-
+      <div className="space-y-3">
+        {matches.map((m, i) => (
+          <MatchLine
+            key={m.id}
+            match={m}
+            teamId={teamId}
+            showCountdown={i === 0}
+            showVenue={i === 0}
+          />
+        ))}
+      </div>
       {ticketUrl && (
         <a
           href={ticketUrl}
@@ -761,43 +759,7 @@ function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
   )
 }
 
-function MatchHero({ match, teamId, clubColor }) {
-  const isHome = match.home_team_id === teamId
-  const oppName = isHome ? match.away_name : match.home_name
-  const oppColor = isHome ? match.away_color : match.home_color
-  const t = fmtMatchDate(match.date)
-  return (
-    <div className="rounded-lg overflow-hidden">
-      {/* メイン: クラブカラー塗りの大ブロック (STANDINGS と同じ視覚的重さ) */}
-      <div className="px-4 pt-4 pb-3 text-white" style={{ backgroundColor: clubColor }}>
-        <div className="flex items-center justify-between text-[10px] font-mono tracking-[0.18em] opacity-85">
-          <span>{isHome ? 'HOME' : 'AWAY'}</span>
-          <span>{t.daysUntil > 0 ? `あと ${t.daysUntil} 日` : '今日'}</span>
-        </div>
-        <div className="flex items-baseline gap-2 mt-1 leading-none">
-          <span className="text-[3.75rem] font-black tabular-nums">{t.month}/{t.day}</span>
-          <span className="text-sm font-mono opacity-85">({t.dow})</span>
-        </div>
-      </div>
-      {/* 対戦相手: 白背景、相手色アクセント */}
-      <div className="bg-white border border-t-0 border-black/10 px-4 py-3 rounded-b-lg">
-        <p className="text-[10px] font-mono text-zinc-500 leading-none mb-1.5">vs</p>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="block w-1.5 h-7 rounded-full shrink-0"
-            style={{ backgroundColor: oppColor ?? '#a1a1aa' }}
-          />
-          <p className="text-base font-black leading-tight truncate">{oppName}</p>
-        </div>
-        {match.venue_name_ja && (
-          <p className="text-[11px] text-zinc-500 truncate mt-1.5">{match.venue_name_ja}</p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function MatchLine({ match, teamId }) {
+function MatchLine({ match, teamId, showCountdown = false, showVenue = false }) {
   const isHome = match.home_team_id === teamId
   const oppName = isHome ? match.away_name : match.home_name
   const oppColor = isHome ? match.away_color : match.home_color
@@ -817,9 +779,17 @@ function MatchLine({ match, teamId }) {
       <div className="flex-1 min-w-0">
         <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
           {isHome ? 'HOME' : 'AWAY'}
+          {showVenue && match.venue_name_ja && (
+            <span className="opacity-70"> · {match.venue_name_ja}</span>
+          )}
         </p>
         <p className="text-xs font-bold truncate leading-tight">vs {oppName}</p>
       </div>
+      {showCountdown && (
+        <span className="text-[10px] font-mono text-zinc-500 tabular-nums shrink-0">
+          {t.daysUntil > 0 ? `あと ${t.daysUntil}日` : '今日'}
+        </span>
+      )}
     </div>
   )
 }
