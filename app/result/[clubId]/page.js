@@ -280,20 +280,24 @@ export default async function ResultPage({ params, searchParams }) {
             </p>
           </section>
 
-          {/* STADIUM + Maps + 最寄駅 */}
-          {(detail?.stadium || clubMeta.access) && (
+          {/* STADIUM */}
+          {detail?.stadium?.home_stadium_name && (
             <section className="dsRB-fade" style={{ '--d': '0.2s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">STADIUM</p>
-              <div className="border-t border-black/10 pt-6 space-y-3">
-                {detail?.stadium?.home_stadium_name && (
-                  <p className="text-xl sm:text-2xl font-black">{detail.stadium.home_stadium_name}</p>
-                )}
-                {clubMeta.access && (
-                  <p className="text-sm text-zinc-700">
-                    最寄: <span className="font-bold">{clubMeta.access.station}</span>
-                    {clubMeta.access.walkMinutes != null && <span> · 徒歩 {clubMeta.access.walkMinutes} 分</span>}
-                    {clubMeta.access.note && <span className="text-zinc-500"> ({clubMeta.access.note})</span>}
-                  </p>
+              <div className="border-t border-black/10 pt-6 space-y-4">
+                <p className="text-xl sm:text-2xl font-black">{detail.stadium.home_stadium_name}</p>
+                {lat && lng && (
+                  <div className="rounded-lg overflow-hidden border border-black/10 bg-zinc-100">
+                    <iframe
+                      title={`${detail.stadium.home_stadium_name} 地図`}
+                      src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                      width="100%"
+                      height="320"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
                 )}
                 {mapsUrl && (
                   <a
