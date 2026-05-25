@@ -488,13 +488,10 @@ export default async function ResultPage({ params, searchParams }) {
             </div>
           )}
 
-          {/* このクラブでプレーした選手 (現在海外) */}
+          {/* 現在 海外でプレー中の OB */}
           {overseas.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-1">
-                このクラブでプレーした選手
-              </p>
-              <p className="text-[10px] text-zinc-500 mb-3">
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">
                 現在 海外でプレー中
               </p>
               <ul className="space-y-2.5">
