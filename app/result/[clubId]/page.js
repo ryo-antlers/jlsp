@@ -518,22 +518,28 @@ export default async function ResultPage({ params, searchParams }) {
         </aside>
       </div>
 
-      {/* BOTTOM STRIP — TOP3 / BOTTOM3 (bar chart) */}
+      {/* BOTTOM STRIP — TOP3 (大カード) + BOTTOM3 (条目) */}
       <div className="border-t border-black/10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-10 sm:gap-12">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 space-y-10 sm:space-y-12">
+          {/* TOP 3 — クラブカラー塗りの hero カード */}
           <div>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">TOP 3 RECOMMENDED</p>
-            <div className="space-y-5">
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">
+              TOP 3 RECOMMENDED
+            </p>
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
               {top3.map((m, i) => (
-                <MatchBar key={m.club.id} rank={i + 1} club={m.club} score={m.score} variant="top" />
+                <TopCard key={m.club.id} rank={i + 1} club={m.club} score={m.score} />
               ))}
             </div>
           </div>
+          {/* BOTTOM 3 — グレー基調の条目 */}
           <div>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">BOTTOM 3 MISMATCH</p>
-            <div className="space-y-5">
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">
+              BOTTOM 3 MISMATCH
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {worst3.map((m, i) => (
-                <MatchBar key={m.club.id} rank={i + 1} club={m.club} score={m.score} variant="bottom" />
+                <BottomCard key={m.club.id} rank={i + 1} club={m.club} score={m.score} />
               ))}
             </div>
           </div>
@@ -607,8 +613,6 @@ export default async function ResultPage({ params, searchParams }) {
               typeCode={userTypeCode}
               typeNickname={userType?.nickname}
               clubName={top1.club.name}
-              clubId={top1.club.id}
-              encodedAnswers={a}
             />
             <Link href="/quiz" className="cta-button">もう一度診断する</Link>
           </div>
@@ -740,7 +744,6 @@ function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
             key={m.id}
             match={m}
             teamId={teamId}
-            showCountdown={i === 0}
             showVenue={i === 0}
           />
         ))}
@@ -759,7 +762,7 @@ function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
   )
 }
 
-function MatchLine({ match, teamId, showCountdown = false, showVenue = false }) {
+function MatchLine({ match, teamId, showVenue = false }) {
   const isHome = match.home_team_id === teamId
   const oppName = isHome ? match.away_name : match.home_name
   const oppColor = isHome ? match.away_color : match.home_color
@@ -785,11 +788,6 @@ function MatchLine({ match, teamId, showCountdown = false, showVenue = false }) 
         </p>
         <p className="text-xs font-bold truncate leading-tight">vs {oppName}</p>
       </div>
-      {showCountdown && (
-        <span className="text-[10px] font-mono text-zinc-500 tabular-nums shrink-0">
-          {t.daysUntil > 0 ? `あと ${t.daysUntil}日` : '今日'}
-        </span>
-      )}
     </div>
   )
 }
@@ -812,47 +810,58 @@ function OfficialLink({ href, label }) {
 }
 
 /**
- * TOP3 / BOTTOM3 用の bar chart 行。
+ * TOP 3 用の hero カード。
  *
- * - rank (1-3) + クラブ名 + score% を表示
- * - 横棒バーで score を視覚化 (クラブカラー、BOTTOM は opacity 落とす)
- * - 100% 基準の絶対バー (TOP3 同士 / BOTTOM3 同士の比較がしやすい)
+ * クラブカラーで塗りつぶした 4:5 の縦長カード。白文字でランク + クラブ名、
+ * 下端に巨大な % 数値を配置。STANDINGS / NEXT MATCH のクラブカラー
+ * ブロックと統一感あるトロフィー風表現。
  */
-function MatchBar({ rank, club, score, variant = 'top' }) {
-  const isBottom = variant === 'bottom'
+function TopCard({ rank, club, score }) {
   const pctNum = Math.round(score * 100)
   return (
-    <div>
-      <div className="flex items-baseline justify-between mb-1.5 gap-2">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className="font-mono text-xs text-zinc-400 tabular-nums w-4 shrink-0">
-            #{rank}
-          </span>
-          <span
-            className={`text-base sm:text-lg font-bold truncate ${
-              isBottom ? 'text-zinc-600' : ''
-            }`}
-          >
-            {club.name}
-          </span>
-        </div>
-        <span
-          className="font-mono text-xl font-black tabular-nums shrink-0"
-          style={{ color: isBottom ? '#71717a' : club.color }}
-        >
-          {pctNum}%
+    <div
+      className="relative rounded-xl overflow-hidden text-white p-4 sm:p-5 aspect-[4/5] flex flex-col justify-between shadow-sm"
+      style={{ backgroundColor: club.color }}
+    >
+      <div>
+        <p className="text-[10px] font-mono tracking-[0.2em] opacity-80">#{rank}</p>
+        <p className="text-base sm:text-xl font-black mt-2 leading-tight">
+          {club.name}
+        </p>
+      </div>
+      <div className="flex items-baseline gap-1 leading-none">
+        <span className="text-5xl sm:text-6xl font-black tabular-nums">
+          {pctNum}
         </span>
+        <span className="text-base sm:text-lg font-bold opacity-80">%</span>
       </div>
-      <div className="h-2 bg-black/5 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-[width] duration-700 ease-out"
-          style={{
-            width: `${pctNum}%`,
-            backgroundColor: club.color,
-            opacity: isBottom ? 0.4 : 1,
-          }}
-        />
-      </div>
+    </div>
+  )
+}
+
+/**
+ * BOTTOM 3 用の condensed カード。
+ *
+ * グレー基調 + 左端にクラブカラーの細バー、右端に % (灰色)。
+ * TOP3 とは明確に視覚的階層を変え、「合わない」雰囲気を伝える。
+ */
+function BottomCard({ rank, club, score }) {
+  const pctNum = Math.round(score * 100)
+  return (
+    <div className="rounded-lg bg-zinc-50 px-4 py-3 flex items-center gap-3 border border-black/5">
+      <span
+        className="block w-1 h-6 rounded-full shrink-0 opacity-50"
+        style={{ backgroundColor: club.color }}
+      />
+      <span className="font-mono text-xs text-zinc-400 tabular-nums shrink-0">
+        #{rank}
+      </span>
+      <span className="flex-1 text-sm font-bold text-zinc-600 truncate">
+        {club.name}
+      </span>
+      <span className="font-mono text-base font-bold text-zinc-500 tabular-nums shrink-0">
+        {pctNum}%
+      </span>
     </div>
   )
 }
