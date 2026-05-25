@@ -542,37 +542,36 @@ export default async function ResultPage({ params, searchParams }) {
         </div>
       </div>
 
-      {/* 16 TYPES expander */}
+      {/* 16 TYPES (常時展開) */}
       <div className="border-t border-black/10">
         <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
-          <details className="dsRB-types group">
-            <summary className="cursor-pointer list-none flex items-center gap-3 hover:opacity-70 transition-opacity">
-              <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">ALL 16 TYPES</span>
-              <span className="text-xs font-mono text-zinc-400 transition-transform group-open:rotate-90">▸</span>
-            </summary>
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {Object.values(TYPE_META).map((t) => {
-                const isMine = t.code === userTypeCode
-                return (
-                  <div
-                    key={t.code}
-                    className={`px-3 py-2.5 rounded-lg border ${
-                      isMine ? 'border-[#c7384d] bg-[#fff5f7]' : 'border-black/10 bg-white'
-                    }`}
+          <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-6">ALL 16 TYPES</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {Object.values(TYPE_META).map((t) => {
+              const isMine = t.code === userTypeCode
+              return (
+                <div
+                  key={t.code}
+                  className={`px-3 py-2.5 rounded-lg border ${
+                    isMine ? 'border-[#c7384d] bg-[#fff5f7]' : 'border-black/10 bg-white'
+                  }`}
+                >
+                  <p
+                    className="text-base sm:text-lg font-black tracking-[0.06em] tabular-nums leading-none"
+                    style={{ color: isMine ? '#c7384d' : '#0e0e10' }}
                   >
-                    <p
-                      className="text-base sm:text-lg font-black tracking-[0.06em] tabular-nums leading-none"
-                      style={{ color: isMine ? '#c7384d' : '#0e0e10' }}
-                    >
-                      {t.code}
-                    </p>
-                    <p className="text-xs sm:text-sm font-bold mt-1 leading-tight">{t.nickname}</p>
-                    {isMine && <p className="text-[9px] font-mono text-[#c7384d] mt-1 tracking-[0.2em]">YOU</p>}
-                  </div>
-                )
-              })}
-            </div>
-          </details>
+                    {t.code}
+                  </p>
+                  <p
+                    className="text-xs sm:text-sm font-bold mt-1 leading-tight"
+                    style={{ color: isMine ? '#c7384d' : undefined }}
+                  >
+                    {t.nickname}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
