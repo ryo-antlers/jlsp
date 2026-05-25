@@ -7,6 +7,7 @@ import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // �
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnail, getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import ShareButtons from './ShareButtons'
+import XTimeline from './XTimeline'
 import CountUp from './CountUp'
 
 export const dynamic = 'force-dynamic'
@@ -389,6 +390,16 @@ export default async function ResultPage({ params, searchParams }) {
                     <OfficialLink href={clubMeta.official.shop} label="SHOP" />
                   )}
                 </div>
+              </div>
+            </section>
+          )}
+
+          {/* X 公式アカウントの直近投稿 */}
+          {clubMeta.official?.x && (
+            <section className="dsRB-fade" style={{ '--d': '0.27s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">X — 直近の投稿</p>
+              <div className="border-t border-black/10 pt-6">
+                <XTimeline profileUrl={clubMeta.official.x} tweetLimit={3} height={600} />
               </div>
             </section>
           )}
