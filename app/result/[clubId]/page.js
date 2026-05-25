@@ -164,6 +164,7 @@ export default async function ResultPage({ params, searchParams }) {
   const clubColor = top1.club.color
   const clubMeta = data.clubMeta ?? {}
   const alumni = clubMeta.notableAlumni ?? NOTABLE_ALUMNI[top1.club.id] ?? []
+  const alumniStats = data.alumniStats ?? {}
   // DB に海外組データがあれば DB を信頼 (per-club 空 = 真に海外組ゼロ)。
   // DB 全体が空 (= migration 未適用 / 初回 sync 待ち) のときだけ静的 fallback。
   const overseas = overseasDataAvailable
@@ -467,16 +468,22 @@ export default async function ResultPage({ params, searchParams }) {
           {alumni.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">主なOB選手</p>
-              <ul className="space-y-1">
-                {alumni.map((name) => (
-                  <li key={name} className="text-sm font-bold leading-tight flex items-center gap-2">
-                    <span
-                      className="inline-block w-1 h-3.5 rounded-full shrink-0"
-                      style={{ backgroundColor: clubColor, opacity: 0.4 }}
-                    />
-                    <span className="truncate">{name}</span>
-                  </li>
-                ))}
+              <ul className="space-y-2.5">
+                {alumni.map((name) => {
+                  const stats = alumniStats[name]
+                  return (
+                    <li key={name} className="leading-tight">
+                      <p className="text-sm font-bold">{name}</p>
+                      {stats && (stats.apps > 0 || stats.goals > 0) && (
+                        <p className="text-[11px] font-mono text-zinc-500 mt-0.5 tabular-nums">
+                          {stats.apps} 試合
+                          <span className="opacity-60"> · </span>
+                          {stats.goals} ゴール
+                        </p>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}
