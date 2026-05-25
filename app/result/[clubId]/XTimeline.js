@@ -1,62 +1,82 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import Script from 'next/script'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * X (旧 Twitter) Timeline ウィジェット。
  *
- * platform.twitter.com/widgets.js を読み込み、指定アカウントの直近投稿を
- * iframe で埋め込む。API key 不要、x.com / twitter.com 両対応。
+ * platform.twitter.com/widgets.js を Next.js の Script で読み込み、
+ * 指定アカウントの直近投稿を iframe で埋め込む。
  *
- * 同じスクリプトは複数 component で共有される (1 度だけロード)。
- * URL から username を取り出し、twitter.com に正規化したリンクを置いて
- * widgets.js に変換させる。
+ * - x.com / twitter.com 両 URL を username に正規化
+ * - widgets.js は 1 度だけ読み込まれ、複数 component で共有
+ * - 一定時間経っても iframe が描画されなければ fallback リンクに切替
+ *   (= ブラウザの拡張機能 / プライバシー設定で widgets.js がブロックされた等)
  */
 export default function XTimeline({ profileUrl, tweetLimit = 3, height = 600 }) {
   const ref = useRef(null)
-
+  const [failed, setFailed] = useState(false)
   const username = parseUsername(profileUrl)
+
+  function loadWidget() {
+    if (!ref.current) return
+    if (window.twttr?.widgets?.load) {
+      window.twttr.widgets.load(ref.current)
+    }
+  }
 
   useEffect(() => {
     if (!username) return
+    // すでにスクリプトが読み込まれている場合 (=他のページから戻ってきた等)
+    if (window.twttr?.widgets) loadWidget()
 
-    const SRC = 'https://platform.twitter.com/widgets.js'
-    const existing = document.querySelector(`script[src="${SRC}"]`)
-
-    function reloadWidgets() {
-      // widgets.load(element) で対象 DOM を走査して timeline を生成
-      if (window.twttr?.widgets?.load && ref.current) {
-        window.twttr.widgets.load(ref.current)
+    // 一定時間経っても <iframe> が描画されなければ failed と判定
+    const t = setTimeout(() => {
+      if (ref.current && !ref.current.querySelector('iframe')) {
+        setFailed(true)
       }
-    }
-
-    if (existing) {
-      reloadWidgets()
-    } else {
-      const script = document.createElement('script')
-      script.src = SRC
-      script.async = true
-      script.charset = 'utf-8'
-      script.onload = reloadWidgets
-      document.body.appendChild(script)
-    }
+    }, 8000)
+    return () => clearTimeout(t)
   }, [username])
 
   if (!username) return null
 
-  return (
-    <div ref={ref} className="bg-white rounded-lg border border-black/10 overflow-hidden">
+  if (failed) {
+    return (
       <a
-        className="twitter-timeline"
-        data-tweet-limit={tweetLimit}
-        data-height={height}
-        data-chrome="noheader nofooter noborders transparent"
-        data-theme="light"
-        href={`https://twitter.com/${username}`}
+        href={`https://x.com/${username}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block bg-zinc-50 border border-black/10 rounded-lg p-6 text-center text-sm text-zinc-600 hover:text-zinc-900 transition-colors"
       >
-        Tweets by @{username}
+        埋め込みが読み込めませんでした。
+        <br />
+        <span className="font-bold underline">@{username} を X で開く →</span>
       </a>
-    </div>
+    )
+  }
+
+  return (
+    <>
+      <Script
+        src="https://platform.twitter.com/widgets.js"
+        strategy="afterInteractive"
+        onLoad={loadWidget}
+      />
+      <div ref={ref} className="bg-white rounded-lg border border-black/10 overflow-hidden">
+        <a
+          className="twitter-timeline"
+          data-tweet-limit={tweetLimit}
+          data-height={height}
+          data-chrome="noheader nofooter noborders transparent"
+          data-theme="light"
+          href={`https://twitter.com/${username}`}
+        >
+          Tweets by @{username}
+        </a>
+      </div>
+    </>
   )
 }
 
