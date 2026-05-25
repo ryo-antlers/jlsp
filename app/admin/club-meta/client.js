@@ -384,18 +384,24 @@ function ClubEditor({ club }) {
       <section className="border-t border-zinc-800 pt-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
-            観光スポット (1 行 1 件、Wikipedia 記事タイトルがそのまま検索キーに)
+            観光スポット (1 行 1 件、最大 3 件まで表示)
           </p>
           <SmallBtn onClick={loadStaticSightseeing}>静的に戻す ←</SmallBtn>
         </div>
+        <p className="text-[10px] text-zinc-500 mb-1">
+          Wikipedia 記事タイトルをそのまま入れると画像と説明が自動取得されます (例: 「香取神社」より「香取神宮」のほうがヒットしやすい)。
+        </p>
         <textarea
           value={sightseeingText}
           onChange={(e) => setSightseeingText(e.target.value)}
-          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm font-mono text-zinc-100 leading-relaxed resize-y min-h-[150px]"
+          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm font-mono text-zinc-100 leading-relaxed resize-y min-h-[90px]"
           placeholder={'鹿島神宮\n息栖神社\n大洗磯前神社'}
         />
         <p className="text-[10px] text-zinc-500 mt-1">
           現在 {sightseeingText.split('\n').filter((s) => s.trim()).length} 件
+          {sightseeingText.split('\n').filter((s) => s.trim()).length > 3 && (
+            <span className="text-amber-500 ml-2">⚠ 4 件目以降は表示されません</span>
+          )}
         </p>
       </section>
 

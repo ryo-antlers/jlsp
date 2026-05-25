@@ -175,9 +175,10 @@ export default async function ResultPage({ params, searchParams }) {
     ? overseasPlayers
     : (OVERSEAS_PLAYERS[top1.club.id] ?? [])
   // merged clubMeta.sightseeingSpots (DB override > 静的 SIGHTSEEING_SPOTS) を最優先、
-  // それも無ければ clubs.js の sightseeing (2 件) に fallback。
-  const sightseeing =
-    clubMeta.sightseeingSpots ?? parseSightseeing(top1.club.sightseeing)
+  // それも無ければ clubs.js の sightseeing (2 件) に fallback。最大 3 件まで表示。
+  const sightseeing = (
+    clubMeta.sightseeingSpots ?? parseSightseeing(top1.club.sightseeing) ?? []
+  ).slice(0, 3)
   // Wikipedia (ja) からサムネ画像を並列取得。失敗したものは image:null で返るので
   // テキストカードに自動 fallback できる。マスコット画像も同時取得。
   const mascotWikiTitle =
@@ -414,7 +415,7 @@ export default async function ResultPage({ params, searchParams }) {
               <p className="text-xs sm:text-sm text-zinc-600 mb-4 leading-relaxed">
                 {top1.club.prefecture} の見どころ。観戦のついでにどうぞ。
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {sightseeingCards.map(({ title, image, extract }) => {
                   const shown = displayTitle(title)
                   return (
