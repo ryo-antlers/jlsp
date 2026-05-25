@@ -32,11 +32,6 @@ function parseSightseeing(s) {
 function displayTitle(t) {
   return (t || '').replace(/\s*[（(][^）)]*[）)]\s*/g, '').trim()
 }
-function fmtYen(n) {
-  if (!n) return null
-  return '¥' + Number(n).toLocaleString('ja-JP')
-}
-
 /**
  * Parallel Coordinates: 4 軸を縦に並べた折れ線。S-curve でなめらかに繋ぐ。
  */
@@ -313,32 +308,6 @@ export default async function ResultPage({ params, searchParams }) {
             </section>
           )}
 
-          {/* AWAY TRAVEL */}
-          {clubMeta.awayTravel?.fromTokyo && (
-            <section className="dsRB-fade" style={{ '--d': '0.22s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">AWAY TRAVEL</p>
-              <div className="border-t border-black/10 pt-6">
-                <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                  <div>
-                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">所要時間</p>
-                    <p className="text-lg sm:text-xl font-black">{clubMeta.awayTravel.fromTokyo.hours}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">交通手段</p>
-                    <p className="text-sm font-bold">{clubMeta.awayTravel.fromTokyo.transport}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">料金目安</p>
-                    <p className="text-lg sm:text-xl font-black tabular-nums">{fmtYen(clubMeta.awayTravel.fromTokyo.yen) ?? '—'}</p>
-                  </div>
-                </div>
-                {clubMeta.awayTravel.fromTokyo.note && (
-                  <p className="text-xs text-zinc-500 mt-3">{clubMeta.awayTravel.fromTokyo.note}</p>
-                )}
-              </div>
-            </section>
-          )}
-
           {/* MASCOT */}
           {clubMeta.mascot && (
             <section className="dsRB-fade" style={{ '--d': '0.24s' }}>
@@ -492,37 +461,6 @@ export default async function ResultPage({ params, searchParams }) {
               clubColor={clubColor}
               ticketUrl={clubMeta.ticketUrl}
             />
-          )}
-
-          {/* TOP SCORERS — 今シーズン得点上位 */}
-          {detail?.topScorers?.length > 0 && (
-            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.25s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">得点ランキング</p>
-              <ol className="space-y-1.5">
-                {detail.topScorers.map((p, i) => (
-                  <li key={p.id} className="flex items-baseline gap-2 text-sm">
-                    <span
-                      className="font-mono text-[10px] text-zinc-400 w-4 tabular-nums shrink-0"
-                    >
-                      {i + 1}
-                    </span>
-                    {p.no != null && (
-                      <span className="font-mono text-[10px] text-zinc-500 w-6 tabular-nums shrink-0">
-                        #{p.no}
-                      </span>
-                    )}
-                    <span className="font-bold flex-1 truncate">{p.name_ja}</span>
-                    <span
-                      className="font-mono font-black tabular-nums tracking-tight"
-                      style={{ color: clubColor }}
-                    >
-                      {p.goals}
-                    </span>
-                    <span className="text-[10px] text-zinc-500">G</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
           )}
 
           {/* 主なOB選手 */}
