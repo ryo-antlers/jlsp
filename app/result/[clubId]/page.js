@@ -375,7 +375,7 @@ export default async function ResultPage({ params, searchParams }) {
             <section className="dsRB-fade" style={{ '--d': '0.26s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">OFFICIAL</p>
               <div className="border-t border-black/10 pt-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {clubMeta.official.hp && (
                     <OfficialLink href={clubMeta.official.hp} label="公式 HP" />
                   )}
@@ -384,9 +384,6 @@ export default async function ResultPage({ params, searchParams }) {
                   )}
                   {clubMeta.official.instagram && (
                     <OfficialLink href={clubMeta.official.instagram} label="Instagram" />
-                  )}
-                  {clubMeta.official.shop && (
-                    <OfficialLink href={clubMeta.official.shop} label="SHOP" />
                   )}
                 </div>
               </div>
