@@ -33,6 +33,7 @@ export async function POST(req) {
     access: nonEmptyObject(body.access),
     away_travel: nonEmptyObject(body.away_travel),
     sightseeing: nonEmptyArray(body.sightseeing),
+    notable_alumni: nonEmptyArray(body.notable_alumni),
   }
   const allEmpty = Object.values(fields).every((v) => v == null)
   try {

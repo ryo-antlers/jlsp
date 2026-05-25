@@ -1,6 +1,7 @@
 import { CLUBS } from '@/lib/jlsp/clubs'
 import { CLUB_META } from '@/lib/jlsp/club-meta'
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
+import { NOTABLE_ALUMNI } from '@/lib/jlsp/club-players'
 import { loadAllClubMetaOverrides } from '@/lib/jlsp/club-meta-loader'
 import { getWikiThumbnail } from '@/lib/jlsp/wiki-image'
 import ClubMetaClient from './client'
@@ -34,6 +35,7 @@ async function loadData() {
       const staticAccess = meta.access ?? null
       const staticAwayTravel = meta.awayTravel?.fromTokyo ?? null
       const staticSightseeing = SIGHTSEEING_SPOTS[c.id] ?? null
+      const staticAlumni = NOTABLE_ALUMNI[c.id] ?? null
       return {
         id: c.id,
         name: c.name,
@@ -47,6 +49,7 @@ async function loadData() {
         staticAccess,           // { station, walkMinutes, note } | null
         staticAwayTravel,       // { hours, yen, transport, note } | null
         staticSightseeing,      // string[] | null
+        staticAlumni,           // string[] | null
         overrideDescriptionLong: o?.description_long ?? '',
         overrideMascotName: o?.mascot_name ?? '',
         overrideMascotWikiTitle: o?.mascot_wiki_title ?? '',
@@ -54,6 +57,7 @@ async function loadData() {
         overrideAccess: o?.access ?? null,
         overrideAwayTravel: o?.away_travel ?? null,
         overrideSightseeing: Array.isArray(o?.sightseeing) ? o.sightseeing : null,
+        overrideAlumni: Array.isArray(o?.notable_alumni) ? o.notable_alumni : null,
         overrideUpdatedAt: o?.updated_at ?? null,
         clubWikiTitle: clubWiki?.title ?? c.name,
         clubWikiPageUrl: clubWiki?.pageUrl ?? null,
@@ -78,7 +82,8 @@ export default async function ClubMetaAdminPage() {
       c.overrideMascotWikiTitle ||
       c.overrideAccess ||
       c.overrideAwayTravel ||
-      c.overrideSightseeing,
+      c.overrideSightseeing ||
+      c.overrideAlumni,
   ).length
 
   return (

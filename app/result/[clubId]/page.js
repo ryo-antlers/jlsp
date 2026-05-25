@@ -168,7 +168,7 @@ export default async function ResultPage({ params, searchParams }) {
   const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, userType, userTypeCode, userVector, teamId } = data
   const clubColor = top1.club.color
   const clubMeta = data.clubMeta ?? {}
-  const alumni = NOTABLE_ALUMNI[top1.club.id] ?? []
+  const alumni = clubMeta.notableAlumni ?? NOTABLE_ALUMNI[top1.club.id] ?? []
   // DB に海外組データがあれば DB を信頼 (per-club 空 = 真に海外組ゼロ)。
   // DB 全体が空 (= migration 未適用 / 初回 sync 待ち) のときだけ静的 fallback。
   const overseas = overseasDataAvailable
@@ -494,6 +494,37 @@ export default async function ResultPage({ params, searchParams }) {
             />
           )}
 
+          {/* TOP SCORERS — 今シーズン得点上位 */}
+          {detail?.topScorers?.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.25s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">得点ランキング</p>
+              <ol className="space-y-1.5">
+                {detail.topScorers.map((p, i) => (
+                  <li key={p.id} className="flex items-baseline gap-2 text-sm">
+                    <span
+                      className="font-mono text-[10px] text-zinc-400 w-4 tabular-nums shrink-0"
+                    >
+                      {i + 1}
+                    </span>
+                    {p.no != null && (
+                      <span className="font-mono text-[10px] text-zinc-500 w-6 tabular-nums shrink-0">
+                        #{p.no}
+                      </span>
+                    )}
+                    <span className="font-bold flex-1 truncate">{p.name_ja}</span>
+                    <span
+                      className="font-mono font-black tabular-nums tracking-tight"
+                      style={{ color: clubColor }}
+                    >
+                      {p.goals}
+                    </span>
+                    <span className="text-[10px] text-zinc-500">G</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {/* 主なOB選手 */}
           {alumni.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
@@ -734,7 +765,7 @@ function StandingsCard({ standings, clubColor }) {
                   '--delay': `${0.4 + i * 0.08}s`,
                 }}
               >
-                {c === 'W' ? '勝' : c === 'D' ? '分' : '敗'}
+                {c}
               </span>
             ))}
           </div>
@@ -817,9 +848,6 @@ function MatchHero({ match, teamId, clubColor }) {
             {t.month}/{t.day}
           </span>
           <span className="text-xs font-mono text-zinc-500">({t.dow})</span>
-          <span className="ml-auto text-sm font-mono tabular-nums text-zinc-700">
-            {t.hh}:{t.mm}
-          </span>
         </div>
         {/* opponent */}
         <div className="flex items-center gap-2.5">
@@ -859,7 +887,7 @@ function MatchLine({ match, teamId }) {
       />
       <div className="flex-1 min-w-0">
         <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
-          {isHome ? 'HOME' : 'AWAY'} · {t.hh}:{t.mm}
+          {isHome ? 'HOME' : 'AWAY'}
         </p>
         <p className="text-xs font-bold truncate leading-tight">vs {oppName}</p>
       </div>

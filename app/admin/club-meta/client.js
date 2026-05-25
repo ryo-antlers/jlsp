@@ -77,6 +77,9 @@ function ClubEditor({ club }) {
   const [sightseeingText, setSightseeingText] = useState(
     (club.overrideSightseeing ?? club.staticSightseeing ?? []).join('\n'),
   )
+  const [alumniText, setAlumniText] = useState(
+    (club.overrideAlumni ?? club.staticAlumni ?? []).join('\n'),
+  )
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [pending, startTransition] = useTransition()
@@ -95,6 +98,9 @@ function ClubEditor({ club }) {
   }
   function loadStaticSightseeing() {
     setSightseeingText((club.staticSightseeing ?? []).join('\n'))
+  }
+  function loadStaticAlumni() {
+    setAlumniText((club.staticAlumni ?? []).join('\n'))
   }
 
   function clearAll() {
@@ -136,6 +142,13 @@ function ClubEditor({ club }) {
         const sightseeingSameAsStatic =
           JSON.stringify(sightseeingArr) === JSON.stringify(club.staticSightseeing ?? [])
 
+        const alumniArr = alumniText
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean)
+        const alumniSameAsStatic =
+          JSON.stringify(alumniArr) === JSON.stringify(club.staticAlumni ?? [])
+
         const accessObj = normalizeAccess(access)
         const accessSameAsStatic =
           JSON.stringify(accessObj) === JSON.stringify(club.staticAccess ?? null)
@@ -170,6 +183,8 @@ function ClubEditor({ club }) {
               sightseeingArr.length === 0 || sightseeingSameAsStatic
                 ? null
                 : sightseeingArr,
+            notable_alumni:
+              alumniArr.length === 0 || alumniSameAsStatic ? null : alumniArr,
           }),
         })
         if (!res.ok) throw new Error(await res.text())
@@ -402,6 +417,25 @@ function ClubEditor({ club }) {
           {sightseeingText.split('\n').filter((s) => s.trim()).length > 3 && (
             <span className="text-amber-500 ml-2">⚠ 4 件目以降は表示されません</span>
           )}
+        </p>
+      </section>
+
+      {/* NOTABLE ALUMNI */}
+      <section className="border-t border-zinc-800 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
+            主なOB選手 (1 行 1 名、上から順に表示)
+          </p>
+          <SmallBtn onClick={loadStaticAlumni}>静的に戻す ←</SmallBtn>
+        </div>
+        <textarea
+          value={alumniText}
+          onChange={(e) => setAlumniText(e.target.value)}
+          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 leading-relaxed resize-y min-h-[120px]"
+          placeholder={'内田篤人\n大迫勇也\n柴崎岳'}
+        />
+        <p className="text-[10px] text-zinc-500 mt-1">
+          現在 {alumniText.split('\n').filter((s) => s.trim()).length} 名
         </p>
       </section>
 
