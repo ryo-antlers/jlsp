@@ -518,30 +518,34 @@ export default async function ResultPage({ params, searchParams }) {
         </aside>
       </div>
 
-      {/* BOTTOM STRIP — TOP3 (大カード) + BOTTOM3 (条目) */}
+      {/* BOTTOM STRIP — TOP3 / BOTTOM3 */}
       <div className="border-t border-black/10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 space-y-10 sm:space-y-12">
-          {/* TOP 3 — クラブカラー塗りの hero カード */}
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
           <div>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-5">
-              TOP 3 RECOMMENDED
-            </p>
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">TOP 3 RECOMMENDED</p>
+            <ol className="space-y-2.5">
               {top3.map((m, i) => (
-                <TopCard key={m.club.id} rank={i + 1} club={m.club} score={m.score} />
+                <li key={m.club.id} className="flex items-center gap-3 border-b border-black/5 pb-2.5 last:border-0">
+                  <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
+                  <span className="w-1 h-6 rounded-full" style={{ backgroundColor: m.club.color }} />
+                  <span className="flex-1 text-base font-bold truncate">{m.club.name}</span>
+                  <span className="font-mono text-base font-black tabular-nums" style={{ color: m.club.color }}>{pct(m.score)}%</span>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
-          {/* BOTTOM 3 — グレー基調の条目 */}
           <div>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">
-              BOTTOM 3 MISMATCH
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">BOTTOM 3 MISMATCH</p>
+            <ol className="space-y-2.5">
               {worst3.map((m, i) => (
-                <BottomCard key={m.club.id} rank={i + 1} club={m.club} score={m.score} />
+                <li key={m.club.id} className="flex items-center gap-3 border-b border-black/5 pb-2.5 last:border-0">
+                  <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
+                  <span className="w-1 h-6 rounded-full opacity-50" style={{ backgroundColor: m.club.color }} />
+                  <span className="flex-1 text-base font-bold text-zinc-600 truncate">{m.club.name}</span>
+                  <span className="font-mono text-base text-zinc-500 tabular-nums">{pct(m.score)}%</span>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
         </div>
       </div>
@@ -806,63 +810,6 @@ function OfficialLink({ href, label }) {
         <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
       </p>
     </a>
-  )
-}
-
-/**
- * TOP 3 用の hero カード。
- *
- * クラブカラーで塗りつぶした 4:5 の縦長カード。白文字でランク + クラブ名、
- * 下端に巨大な % 数値を配置。STANDINGS / NEXT MATCH のクラブカラー
- * ブロックと統一感あるトロフィー風表現。
- */
-function TopCard({ rank, club, score }) {
-  const pctNum = Math.round(score * 100)
-  return (
-    <div
-      className="relative rounded-xl overflow-hidden text-white p-4 sm:p-5 aspect-[4/5] flex flex-col justify-between shadow-sm"
-      style={{ backgroundColor: club.color }}
-    >
-      <div>
-        <p className="text-[10px] font-mono tracking-[0.2em] opacity-80">#{rank}</p>
-        <p className="text-base sm:text-xl font-black mt-2 leading-tight">
-          {club.name}
-        </p>
-      </div>
-      <div className="flex items-baseline gap-1 leading-none">
-        <span className="text-5xl sm:text-6xl font-black tabular-nums">
-          {pctNum}
-        </span>
-        <span className="text-base sm:text-lg font-bold opacity-80">%</span>
-      </div>
-    </div>
-  )
-}
-
-/**
- * BOTTOM 3 用の condensed カード。
- *
- * グレー基調 + 左端にクラブカラーの細バー、右端に % (灰色)。
- * TOP3 とは明確に視覚的階層を変え、「合わない」雰囲気を伝える。
- */
-function BottomCard({ rank, club, score }) {
-  const pctNum = Math.round(score * 100)
-  return (
-    <div className="rounded-lg bg-zinc-50 px-4 py-3 flex items-center gap-3 border border-black/5">
-      <span
-        className="block w-1 h-6 rounded-full shrink-0 opacity-50"
-        style={{ backgroundColor: club.color }}
-      />
-      <span className="font-mono text-xs text-zinc-400 tabular-nums shrink-0">
-        #{rank}
-      </span>
-      <span className="flex-1 text-sm font-bold text-zinc-600 truncate">
-        {club.name}
-      </span>
-      <span className="font-mono text-base font-bold text-zinc-500 tabular-nums shrink-0">
-        {pctNum}%
-      </span>
-    </div>
   )
 }
 
