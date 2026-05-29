@@ -46,7 +46,7 @@ export default async function QuestionOverridesPage() {
     const axis = AXIS_BY_ID[q.axis]
     return {
       id: q.id,
-      text: q.text,
+      text: q.statement ?? q.text ?? '',  // questions.js は statement フィールド
       axis: q.axis,
       axisLabel: axis?.label,
       positiveLabel: axis?.positive,
