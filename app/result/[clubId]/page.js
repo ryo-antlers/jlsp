@@ -308,7 +308,7 @@ export default async function ResultPage({ params, searchParams }) {
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white transition-opacity hover:opacity-85"
                       style={{ backgroundColor: clubColor }}
                     >
-                      📍 現在地からのルート
+                      現在地からのルート
                     </a>
                     <a
                       href={mapsUrl}
@@ -528,7 +528,7 @@ export default async function ResultPage({ params, searchParams }) {
                 <li key={m.club.id} className="flex items-center gap-3 border-b border-black/5 pb-2.5 last:border-0">
                   <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
                   <span className="w-1 h-6 rounded-full" style={{ backgroundColor: m.club.color }} />
-                  <span className="flex-1 text-base font-bold truncate">{m.club.name}</span>
+                  <span className="flex-1 text-base font-bold text-zinc-600 truncate">{m.club.name}</span>
                   <span className="font-mono text-base font-black tabular-nums" style={{ color: clubColor }}>{pct(m.score)}%</span>
                 </li>
               ))}
