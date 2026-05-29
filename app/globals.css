@@ -130,6 +130,20 @@ body {
   padding: 0 1.6em;
 }
 
+/* 結果ページ用: マッチしたクラブの色で塗る variant。
+   親の inline style で --cta-color: #xxx を指定して使う。 */
+.cta-button-club {
+  background: var(--cta-color, #c7384d);
+}
+.cta-button-club:hover {
+  background: #fff;
+  color: var(--cta-color, #c7384d);
+}
+.cta-button-club::before,
+.cta-button-club::after {
+  background: var(--cta-color, #c7384d);
+}
+
 .cta-button:disabled,
 .cta-button[disabled] {
   background: #e5e5e5 !important;

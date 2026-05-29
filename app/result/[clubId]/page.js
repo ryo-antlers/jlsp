@@ -211,7 +211,7 @@ export default async function ResultPage({ params, searchParams }) {
         <div className="px-5 py-5">
           <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-2">YOUR FANTYPE</p>
           <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-5xl font-black tracking-[0.04em]" style={{ color: '#c7384d' }}>
+            <span className="text-5xl font-black tracking-[0.04em]" style={{ color: clubColor }}>
               {userTypeCode ?? '----'}
             </span>
             <span className="text-2xl font-bold">{userType?.nickname ?? ''}</span>
@@ -229,8 +229,8 @@ export default async function ResultPage({ params, searchParams }) {
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
           <div className="dsRB-fade" style={{ '--d': '0s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">TYPE</p>
-            <div className="border-t-2 border-[#c7384d] pt-4">
-              <p className="text-5xl xl:text-6xl font-black tracking-[0.04em] leading-none" style={{ color: '#c7384d' }}>
+            <div className="border-t-2 pt-4" style={{ borderColor: clubColor }}>
+              <p className="text-5xl xl:text-6xl font-black tracking-[0.04em] leading-none" style={{ color: clubColor }}>
                 {userTypeCode ?? '----'}
               </p>
               <p className="text-xl xl:text-2xl font-bold mt-2 leading-tight">{userType?.nickname ?? ''}</p>
@@ -529,7 +529,7 @@ export default async function ResultPage({ params, searchParams }) {
                   <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
                   <span className="w-1 h-6 rounded-full" style={{ backgroundColor: m.club.color }} />
                   <span className="flex-1 text-base font-bold truncate">{m.club.name}</span>
-                  <span className="font-mono text-base font-black tabular-nums" style={{ color: m.club.color }}>{pct(m.score)}%</span>
+                  <span className="font-mono text-base font-black tabular-nums" style={{ color: clubColor }}>{pct(m.score)}%</span>
                 </li>
               ))}
             </ol>
@@ -542,7 +542,7 @@ export default async function ResultPage({ params, searchParams }) {
                   <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
                   <span className="w-1 h-6 rounded-full opacity-50" style={{ backgroundColor: m.club.color }} />
                   <span className="flex-1 text-base font-bold text-zinc-600 truncate">{m.club.name}</span>
-                  <span className="font-mono text-base text-zinc-500 tabular-nums">{pct(m.score)}%</span>
+                  <span className="font-mono text-base font-black tabular-nums" style={{ color: m.club.color }}>{pct(m.score)}%</span>
                 </li>
               ))}
             </ol>
@@ -560,19 +560,22 @@ export default async function ResultPage({ params, searchParams }) {
               return (
                 <div
                   key={t.code}
-                  className={`px-3 py-2.5 rounded-lg border ${
-                    isMine ? 'border-[#c7384d] bg-[#fff5f7]' : 'border-black/10 bg-white'
-                  }`}
+                  className={`px-3 py-2.5 rounded-lg border ${isMine ? '' : 'border-black/10 bg-white'}`}
+                  style={
+                    isMine
+                      ? { borderColor: clubColor, backgroundColor: `${clubColor}0d` }
+                      : undefined
+                  }
                 >
                   <p
                     className="text-base sm:text-lg font-black tracking-[0.06em] tabular-nums leading-none"
-                    style={{ color: isMine ? '#c7384d' : '#0e0e10' }}
+                    style={{ color: isMine ? clubColor : '#0e0e10' }}
                   >
                     {t.code}
                   </p>
                   <p
                     className="text-xs sm:text-sm font-bold mt-1 leading-tight"
-                    style={{ color: isMine ? '#c7384d' : undefined }}
+                    style={{ color: isMine ? clubColor : undefined }}
                   >
                     {t.nickname}
                   </p>
@@ -618,7 +621,13 @@ export default async function ResultPage({ params, searchParams }) {
               typeNickname={userType?.nickname}
               clubName={top1.club.name}
             />
-            <Link href="/quiz" className="cta-button">もう一度診断する</Link>
+            <Link
+              href="/quiz"
+              className="cta-button cta-button-club"
+              style={{ '--cta-color': clubColor }}
+            >
+              もう一度診断する
+            </Link>
           </div>
           <p className="text-center text-[10px] text-zinc-500 pt-6">
             本サービスは非公式の診断コンテンツです。J リーグ・各クラブとは一切関係ありません。
