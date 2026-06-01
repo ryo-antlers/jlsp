@@ -357,10 +357,9 @@ export default async function ResultPage({ params, searchParams }) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xl sm:text-2xl font-black mb-2 leading-tight" style={{ color: clubColor }}>
+                    <p className="text-xl sm:text-2xl font-black leading-tight" style={{ color: clubColor }}>
                       {clubMeta.mascot.name}
                     </p>
-                    <p className="text-sm sm:text-base text-zinc-700 leading-relaxed">{clubMeta.mascot.description}</p>
                     {mascotInfo?.image && (
                       <p className="text-[10px] text-zinc-400 mt-3">画像: Wikipedia (CC BY-SA)</p>
                     )}
@@ -648,7 +647,6 @@ function StandingsCard({ standings, clubColor }) {
       ? standings.prev_rank - standings.rank
       : 0
   const gd = (standings.goals_for ?? 0) - (standings.goals_against ?? 0)
-  const formArr = (standings.form ?? '').slice(-5).split('')
 
   return (
     <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
@@ -707,26 +705,6 @@ function StandingsCard({ standings, clubColor }) {
         </span>
       </div>
 
-      {/* 直近5試合 */}
-      {formArr.length > 0 && (
-        <div className="mt-4">
-          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-2">直近5試合</p>
-          <div className="flex gap-1.5">
-            {formArr.map((c, i) => (
-              <span
-                key={i}
-                className="dsRB-form-badge inline-flex items-center justify-center w-7 h-7 rounded text-xs font-black text-white"
-                style={{
-                  backgroundColor: c === 'W' ? '#22c55e' : c === 'D' ? '#71717a' : '#f97316',
-                  '--delay': `${0.4 + i * 0.08}s`,
-                }}
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
