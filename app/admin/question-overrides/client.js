@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 const VALUE_RANGE = [-3, -2, -1, 0, 1, 2, 3]
 
@@ -149,47 +149,47 @@ function ClubRow({ club, question, initialValue, baseExpected }) {
   const [error, setError] = useState(null)
   const [pending, startTransition] = useTransition()
   const [overridden, setOverridden] = useState(initialValue !== undefined)
+  // 直近 save 済の値。これと value が異なる時だけ debounce 保存をかける
+  const lastSavedRef = useRef(effectiveInitial)
+  const lastSavedOverriddenRef = useRef(initialValue !== undefined)
 
-  const dirty = value !== effectiveInitial || (overridden && value === baseExpected)
-
-  function save() {
-    startTransition(async () => {
-      setSaved(false)
-      setError(null)
-      try {
-        const res = await fetch('/api/admin/question-overrides', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            club_id: club.id,
-            question_id: question.id,
-            value,
-          }),
-        })
-        if (!res.ok) throw new Error(await res.text())
-        const j = await res.json()
-        setSaved(true)
-        setOverridden(!j.deleted)
-      } catch (e) {
-        setError(e.message ?? String(e))
-      }
-    })
+  async function doSave(targetValue) {
+    setError(null)
+    try {
+      const res = await fetch('/api/admin/question-overrides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          club_id: club.id,
+          question_id: question.id,
+          value: targetValue,
+        }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const j = await res.json()
+      lastSavedRef.current = targetValue
+      lastSavedOverriddenRef.current = !j.deleted
+      setOverridden(!j.deleted)
+      setSaved(true)
+      // 1.5 秒後に ✓ を消す
+      setTimeout(() => setSaved(false), 1500)
+    } catch (e) {
+      setError(e.message ?? String(e))
+    }
   }
 
-  function clear() {
+  // value 変更を 500ms debounce で自動保存
+  useEffect(() => {
+    if (value === lastSavedRef.current) return
+    const t = setTimeout(() => {
+      startTransition(() => doSave(value))
+    }, 500)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  function clearToBase() {
     setValue(baseExpected)
-    if (overridden) {
-      // 既に DB に行がある → save() を呼ぶと自動 delete (value === base)
-      startTransition(async () => {
-        await fetch('/api/admin/question-overrides', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ club_id: club.id, question_id: question.id, value: baseExpected }),
-        })
-        setOverridden(false)
-        setSaved(true)
-      })
-    }
   }
 
   return (
@@ -205,24 +205,16 @@ function ClubRow({ club, question, initialValue, baseExpected }) {
         <span className="text-[10px] font-mono text-zinc-500 shrink-0">
           base: {baseExpected > 0 ? `+${baseExpected}` : baseExpected}
         </span>
-        {dirty && (
+        {overridden && value === baseExpected ? null : overridden && (
           <button
-            onClick={save}
-            disabled={pending}
-            className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-[10px] font-bold transition-colors"
-          >
-            {pending ? '…' : '保存'}
-          </button>
-        )}
-        {overridden && !dirty && (
-          <button
-            onClick={clear}
+            onClick={clearToBase}
             className="text-[9px] font-mono text-zinc-500 hover:text-zinc-300 border border-zinc-700 hover:border-zinc-500 px-1.5 py-0.5 rounded"
           >
             base
           </button>
         )}
-        {saved && !dirty && <span className="text-emerald-400 text-xs">✓</span>}
+        {pending && <span className="text-zinc-500 text-[10px]">保存中…</span>}
+        {saved && !pending && <span className="text-emerald-400 text-xs">✓ 自動保存</span>}
         {error && <span className="text-rose-400 text-[10px]">{error}</span>}
       </div>
       <div className="flex gap-0.5">

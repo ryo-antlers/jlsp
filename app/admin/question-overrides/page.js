@@ -1,5 +1,5 @@
 import sql from '@/lib/db'
-import { CLUBS, RAW_CLUBS } from '@/lib/jlsp/clubs'
+import { CLUBS, RAW_CLUBS, sortJ1Geo } from '@/lib/jlsp/clubs'
 import { QUESTIONS } from '@/lib/jlsp/questions'
 import { AXES, AXIS_BY_ID } from '@/lib/jlsp/axes'
 import QuestionOverridesClient from './client'
@@ -27,7 +27,7 @@ async function loadOverrides() {
 
 export default async function QuestionOverridesPage() {
   const overrides = await loadOverrides()
-  const clubs = CLUBS.map((c) => {
+  const clubs = sortJ1Geo(CLUBS).map((c) => {
     const raw = RAW_CLUBS.find((r) => r.id === c.id) ?? c
     return {
       id: c.id,

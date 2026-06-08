@@ -1,4 +1,4 @@
-import { CLUBS } from '@/lib/jlsp/clubs'
+import { CLUBS, sortJ1Geo } from '@/lib/jlsp/clubs'
 import { CLUB_META } from '@/lib/jlsp/club-meta'
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { NOTABLE_ALUMNI } from '@/lib/jlsp/club-players'
@@ -22,7 +22,7 @@ async function loadData() {
   const overrides = await loadAllClubMetaOverrides()
   // 各クラブ + マスコットの wiki extract を並列取得
   const clubsForUI = await Promise.all(
-    CLUBS.map(async (c) => {
+    sortJ1Geo(CLUBS).map(async (c) => {
       const meta = CLUB_META[c.id] ?? {}
       const mascot = meta.mascot ?? null
       const o = overrides[c.id] ?? null

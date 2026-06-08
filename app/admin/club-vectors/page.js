@@ -1,5 +1,5 @@
 import sql from '@/lib/db'
-import { RAW_CLUBS } from '@/lib/jlsp/clubs'
+import { CLUBS, RAW_CLUBS, sortJ1Geo } from '@/lib/jlsp/clubs'
 import { AXES } from '@/lib/jlsp/axes'
 import ClubVectorsClient from './client'
 
@@ -26,14 +26,18 @@ async function loadOverrides() {
 
 export default async function ClubVectorsPage() {
   const overrides = await loadOverrides()
-  const clubs = RAW_CLUBS.map((c) => ({
-    id: c.id,
-    name: c.name,
-    division: c.division,
-    color: c.color,
-    baseVector: c.vector,
-    overrideVector: overrides[c.id] ?? {},
-  }))
+  // J1 のみ、地理順 (北 → 南)
+  const clubs = sortJ1Geo(CLUBS).map((c) => {
+    const raw = RAW_CLUBS.find((r) => r.id === c.id) ?? c
+    return {
+      id: c.id,
+      name: c.name,
+      division: c.division,
+      color: c.color,
+      baseVector: raw.vector,
+      overrideVector: overrides[c.id] ?? {},
+    }
+  })
   const totalOverrides = Object.values(overrides).reduce(
     (s, v) => s + Object.keys(v).length,
     0,
