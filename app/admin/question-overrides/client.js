@@ -96,6 +96,7 @@ export default function QuestionOverridesClient({
       <main>
         {selectedQ && (
           <QuestionEditor
+            key={selectedQ.id}
             question={selectedQ}
             clubs={clubs}
             initialOverrides={overrides}
