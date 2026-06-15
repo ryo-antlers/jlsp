@@ -36,7 +36,7 @@ export async function POST(req) {
     return Response.json({ error: 'unknown club_id or question_id' }, { status: 400 })
   }
 
-  const base = clamp((club.vector[q.axis] ?? 0) * q.direction)
+  const base = clamp(q.legacyAxis ? (club.vector[q.legacyAxis] ?? 0) * q.direction : 0)
   try {
     if (value === base) {
       await sql`

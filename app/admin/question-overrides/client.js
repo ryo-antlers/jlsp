@@ -13,15 +13,15 @@ const VALUE_RANGE = [-3, -2, -1, 0, 1, 2, 3]
 export default function QuestionOverridesClient({
   questions,
   clubs,
-  axes,
+  categories,
   overrides,
   baseExpectations,
 }) {
   const [selectedId, setSelectedId] = useState(questions[0]?.id ?? null)
-  const [filter, setFilter] = useState('all') // 'all' | axis_id
+  const [filter, setFilter] = useState('all') // 'all' | category_id
 
   const filteredQs = useMemo(
-    () => (filter === 'all' ? questions : questions.filter((q) => q.axis === filter)),
+    () => (filter === 'all' ? questions : questions.filter((q) => q.category === filter)),
     [questions, filter],
   )
 
@@ -45,7 +45,7 @@ export default function QuestionOverridesClient({
           <FilterPill active={filter === 'all'} onClick={() => setFilter('all')}>
             全て {questions.length}
           </FilterPill>
-          {axes.map((a) => (
+          {categories.map((a) => (
             <FilterPill
               key={a.id}
               active={filter === a.id}
@@ -83,7 +83,7 @@ export default function QuestionOverridesClient({
                   </div>
                   <p className="mt-1 line-clamp-3">{q.text}</p>
                   <p className="text-[9px] mt-1 opacity-60 font-mono">
-                    {q.axisLabel} · dir={q.direction > 0 ? '+1' : '-1'}
+                    {q.categoryLabel}{q.legacyAxis ? ` · dir=${q.direction > 0 ? '+1' : '-1'}` : ''}
                   </p>
                 </button>
               </li>
@@ -113,20 +113,27 @@ function QuestionEditor({ question, clubs, initialOverrides, baseExpectations })
     <div>
       <div className="border-b border-zinc-800 pb-4 mb-4">
         <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 mb-1">
-          {question.id} · {question.axisLabel} · dir={question.direction > 0 ? '+1' : '-1'}
+          {question.id} · {question.categoryLabel}
+          {question.legacyAxis ? ` · dir=${question.direction > 0 ? '+1' : '-1'}` : ''}
         </p>
         <h2 className="text-lg font-bold leading-snug mb-2">{question.text}</h2>
-        <p className="text-[11px] text-zinc-500">
-          step = <span className="text-zinc-300">{question.positiveLabel?.letter}</span>{' '}
-          {question.positiveLabel?.name} 寄り (+) /{' '}
-          <span className="text-zinc-300">{question.negativeLabel?.letter}</span>{' '}
-          {question.negativeLabel?.name} 寄り (-) で答える質問。
-          {question.direction < 0 && (
-            <span className="text-amber-400 ml-2">
-              ※ direction=-1 のため、step の符号が軸方向の符号と反転します
-            </span>
-          )}
-        </p>
+        {question.legacyAxis ? (
+          <p className="text-[11px] text-zinc-500">
+            step = <span className="text-zinc-300">{question.positiveLabel?.letter}</span>{' '}
+            {question.positiveLabel?.name} 寄り (+) /{' '}
+            <span className="text-zinc-300">{question.negativeLabel?.letter}</span>{' '}
+            {question.negativeLabel?.name} 寄り (-) で答える質問。
+            {question.direction < 0 && (
+              <span className="text-amber-400 ml-2">
+                ※ direction=-1 のため、step の符号が軸方向の符号と反転します
+              </span>
+            )}
+          </p>
+        ) : (
+          <p className="text-[11px] text-zinc-500">
+            この文章に「賛成するクラブのサポーター=+」「反対=−」で、各クラブの期待値を -3〜+3 で設定。
+          </p>
+        )}
       </div>
       <div className="space-y-1.5">
         {clubs.map((c) => (
