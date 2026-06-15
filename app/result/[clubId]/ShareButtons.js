@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from 'react'
 
-export default function ShareButtons({ typeCode, typeNickname, clubName }) {
+export default function ShareButtons({ clubName, matchPct }) {
   const [pageUrl, setPageUrl] = useState('')
 
   useEffect(() => {
+    // window.location はマウント後にしか読めないので effect で取得（SSR安全）
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPageUrl(window.location.href)
   }, [])
 
-  const text = typeCode
-    ? `私の FANTYPE は ${typeCode}「${typeNickname}」、推しクラブは「${clubName}」でした!`
-    : `推しクラブは「${clubName}」でした!`
+  const text = matchPct != null
+    ? `私と相性ぴったりのJクラブは「${clubName}」(相性${matchPct}%)でした!`
+    : `私の推しクラブは「${clubName}」でした!`
 
   const xUrl = pageUrl
     ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(pageUrl)}&hashtags=JLSP`

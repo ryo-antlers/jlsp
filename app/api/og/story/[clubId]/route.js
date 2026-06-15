@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { CLUBS, ALL_CLUBS } from '@/lib/jlsp/clubs'
-import { decodeAnswers, matchClubs, scoreAnswers, vectorToCode } from '@/lib/jlsp/diagnose'
-import { TYPE_META } from '@/lib/jlsp/type-meta'
+import { decodeAnswers, matchClubs } from '@/lib/jlsp/diagnose'
 
 export const runtime = 'edge'
 
@@ -21,17 +20,12 @@ export async function GET(req, { params }) {
   const a = searchParams.get('a')
 
   let pctVal = null
-  let typeCode = null
-  let typeNickname = null
   if (a) {
     const answers = decodeAnswers(a)
     if (answers) {
       const all = matchClubs(answers, CLUBS.length)
       const mine = all.find((m) => m.club.id === clubId)
       if (mine) pctVal = Math.round(mine.score * 100)
-      const vec = scoreAnswers(answers)
-      typeCode = vectorToCode(vec)
-      typeNickname = TYPE_META[typeCode]?.nickname ?? null
     }
   }
 
@@ -109,39 +103,24 @@ export async function GET(req, { params }) {
         </div>
 
         {/* Match info */}
-        {typeCode && pctVal != null && (
+        {pctVal != null && (
           <div
             style={{
               marginTop: 80,
               paddingTop: 60,
               borderTop: `3px solid ${dividerBg}`,
               display: 'flex',
-              alignItems: 'flex-end',
-              gap: 36,
+              flexDirection: 'column',
+              lineHeight: 1,
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-              <span style={{ fontSize: 28, fontWeight: 700, opacity: 0.7, marginBottom: 8 }}>
-                MATCH
-              </span>
-              <span style={{ fontSize: 200, fontWeight: 900 }}>
-                {pctVal}
-                <span style={{ fontSize: 80, marginLeft: 8, opacity: 0.7 }}>%</span>
-              </span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 14 }}>
-              <span style={{ fontSize: 28, fontWeight: 700, opacity: 0.7, marginBottom: 6 }}>
-                YOU ARE
-              </span>
-              <span style={{ fontSize: 64, fontWeight: 900, letterSpacing: 6, lineHeight: 1 }}>
-                {typeCode}
-              </span>
-              {typeNickname && (
-                <span style={{ fontSize: 40, fontWeight: 800, marginTop: 8 }}>
-                  {typeNickname}
-                </span>
-              )}
-            </div>
+            <span style={{ fontSize: 28, fontWeight: 700, opacity: 0.7, marginBottom: 8 }}>
+              MATCH
+            </span>
+            <span style={{ fontSize: 200, fontWeight: 900 }}>
+              {pctVal}
+              <span style={{ fontSize: 80, marginLeft: 8, opacity: 0.7 }}>%</span>
+            </span>
           </div>
         )}
 

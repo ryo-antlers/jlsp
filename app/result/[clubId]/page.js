@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { loadResultData } from '@/lib/jlsp/result-page-data'
-import { TYPE_META } from '@/lib/jlsp/type-meta'
 // CLUB_META は loader 経由で DB override を反映済みのものを result-page-data から受け取る
 import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
@@ -32,111 +31,14 @@ function parseSightseeing(s) {
 function displayTitle(t) {
   return (t || '').replace(/\s*[（(][^）)]*[）)]\s*/g, '').trim()
 }
-/**
- * Parallel Coordinates: 4 軸を縦に並べた折れ線。S-curve でなめらかに繋ぐ。
- */
-function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
-  const AXES_DEF = [
-    { id: 'shoubu',  posLetter: 'R', negLetter: 'E', label: '勝負', negLabel: '美学' },
-    { id: 'keiei',   posLetter: 'W', negLetter: 'H', label: '経営', negLabel: '育成' },
-    { id: 'kansen',  posLetter: 'U', negLetter: 'A', label: '観戦', negLabel: '分析' },
-    { id: 'kanshin', posLetter: 'O', negLetter: 'F', label: '関心', negLabel: 'カルチャー' },
-  ]
-  const clamp = (v) => Math.max(-1, Math.min(1, v))
-  const VB_W = 200, VB_H = 116
-  const xs = [25, 75, 125, 175]
-  const yTop = 24, yBottom = 86
-  const yCenter = (yTop + yBottom) / 2
-  const halfH = (yBottom - yTop) / 2
-
-  const userYs = AXES_DEF.map((a) => yCenter - clamp(userVector[a.id] / 18) * halfH)
-  const clubYs = AXES_DEF.map((a) => yCenter - clamp(clubVector[a.id] / 2) * halfH)
-
-  function smoothPath(ys) {
-    let d = `M ${xs[0]} ${ys[0]}`
-    for (let i = 1; i < xs.length; i++) {
-      const midX = (xs[i - 1] + xs[i]) / 2
-      d += ` C ${midX},${ys[i - 1]} ${midX},${ys[i]} ${xs[i]},${ys[i]}`
-    }
-    return d
-  }
-
-  return (
-    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full h-auto block">
-      <line
-        x1={xs[0] - 4} y1={yCenter} x2={xs[xs.length - 1] + 4} y2={yCenter}
-        stroke="#0e0e10" strokeOpacity="0.08" strokeWidth="0.3" strokeDasharray="0.6 1.4"
-      />
-      {xs.map((x, i) => (
-        <g key={i}>
-          <line x1={x} y1={yTop} x2={x} y2={yBottom} stroke="#0e0e10" strokeOpacity="0.22" strokeWidth="0.3" />
-          {[0.25, 0.5, 0.75].map((t) => (
-            <g key={t}>
-              <line x1={x - 1} y1={yCenter - halfH * t} x2={x + 1} y2={yCenter - halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
-              <line x1={x - 1} y1={yCenter + halfH * t} x2={x + 1} y2={yCenter + halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
-            </g>
-          ))}
-          <text x={x} y={yTop - 10} fontSize="3.8" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.18em">{AXES_DEF[i].label}</text>
-          <text x={x} y={yTop - 2.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.92" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].posLetter}</text>
-          <text x={x} y={yBottom + 7.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].negLetter}</text>
-          <text x={x} y={yBottom + 14.5} fontSize="3.6" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.12em">{AXES_DEF[i].negLabel}</text>
-        </g>
-      ))}
-
-      <path
-        d={smoothPath(clubYs)}
-        fill="none"
-        stroke={clubColor}
-        strokeWidth="0.85"
-        strokeOpacity="0.95"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="dsRB-pc-line"
-        style={{ '--delay': `${animDelay + 0.1}s` }}
-      />
-      {clubYs.map((y, i) => (
-        <circle
-          key={`c${i}`}
-          cx={xs[i]} cy={y} r="1.5"
-          fill={clubColor} stroke="#fafaf7" strokeWidth="0.45"
-          className="dsRB-pc-dot"
-          style={{ '--delay': `${animDelay + 0.4 + i * 0.05}s` }}
-        />
-      ))}
-
-      <path
-        d={smoothPath(userYs)}
-        fill="none"
-        stroke="#0e0e10"
-        strokeWidth="0.85"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="dsRB-pc-line"
-        style={{ '--delay': `${animDelay + 0.35}s` }}
-      />
-      {userYs.map((y, i) => (
-        <circle
-          key={`u${i}`}
-          cx={xs[i]} cy={y} r="1.3"
-          fill="#0e0e10" stroke="#fafaf7" strokeWidth="0.45"
-          className="dsRB-pc-dot"
-          style={{ '--delay': `${animDelay + 0.65 + i * 0.05}s` }}
-        />
-      ))}
-    </svg>
-  )
-}
-
 export async function generateMetadata({ params, searchParams }) {
   const { clubId } = await params
   const sp = (await searchParams) ?? {}
   const a = typeof sp.a === 'string' ? sp.a : null
   const data = await loadResultData({ clubId, a })
   if (!data) return { title: '結果が見つかりません — JLSP' }
-  const { top1, userType } = data
-  const title = userType
-    ? `${userType.code} ${userType.nickname} × ${top1.club.name} — JLSP`
-    : `あなたの推しクラブは「${top1.club.name}」 — JLSP`
+  const { top1 } = data
+  const title = `あなたの推しクラブは「${top1.club.name}」 — JLSP`
   return {
     title,
     description: top1.club.description,
@@ -160,7 +62,7 @@ export default async function ResultPage({ params, searchParams }) {
   const a = typeof sp.a === 'string' ? sp.a : null
   const data = await loadResultData({ clubId, a })
   if (!data) notFound()
-  const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, userType, userTypeCode, userVector, teamId } = data
+  const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, teamId } = data
   const clubColor = top1.club.color
   const clubMeta = data.clubMeta ?? {}
   const alumni = clubMeta.notableAlumni ?? NOTABLE_ALUMNI[top1.club.id] ?? []
@@ -198,7 +100,7 @@ export default async function ResultPage({ params, searchParams }) {
             JLSP
           </Link>
           <span className="text-[10px] sm:text-xs font-mono tracking-[0.18em] text-zinc-500">
-            ISSUE · #{userTypeCode ?? '----'} <span className="opacity-50 mx-2">/</span> {top1.club.name}
+            {pct(top1.score)}% MATCH <span className="opacity-50 mx-2">/</span> {top1.club.name}
           </span>
         </div>
       </div>
@@ -206,49 +108,32 @@ export default async function ResultPage({ params, searchParams }) {
       {/* クラブカラー巨大帯 */}
       <div className="dsRB-color-band" style={{ backgroundColor: clubColor }} />
 
-      {/* MOBILE TYPE STRIP */}
-      <div className="lg:hidden border-b border-black/10 bg-white">
-        <div className="px-5 py-5">
-          <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-2">YOUR FANTYPE</p>
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-5xl font-black tracking-[0.04em]" style={{ color: clubColor }}>
-              {userTypeCode ?? '----'}
-            </span>
-            <span className="text-2xl font-bold">{userType?.nickname ?? ''}</span>
-          </div>
-          {userType?.tagline && (
-            <p className="mt-2 text-sm font-bold italic">{userType.tagline}</p>
-          )}
-        </div>
-      </div>
-
       {/* 3 COLUMN MAIN */}
       <div className="max-w-7xl mx-auto px-5 sm:px-10 py-8 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-x-10 gap-y-12 lg:gap-y-14">
 
-        {/* LEFT COLUMN */}
+        {/* LEFT COLUMN — MATCH */}
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
           <div className="dsRB-fade" style={{ '--d': '0s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">TYPE</p>
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">MATCH</p>
             <div className="border-t-2 pt-4" style={{ borderColor: clubColor }}>
-              <p className="text-5xl xl:text-6xl font-black tracking-[0.04em] leading-none" style={{ color: clubColor }}>
-                {userTypeCode ?? '----'}
+              <p className="text-6xl xl:text-7xl font-black tabular-nums leading-none" style={{ color: clubColor }}>
+                {pct(top1.score)}<span className="text-2xl xl:text-3xl">%</span>
               </p>
-              <p className="text-xl xl:text-2xl font-bold mt-2 leading-tight">{userType?.nickname ?? ''}</p>
+              <p className="text-base xl:text-lg font-bold mt-2 leading-tight">{top1.club.name} との相性</p>
             </div>
           </div>
-          {userType && (
-            <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
-              <p className="text-sm font-bold leading-snug mb-3 italic">{userType.tagline}</p>
-              <p className="text-xs text-zinc-600 leading-relaxed">{userType.description}</p>
-            </div>
-          )}
-          <div className="dsRB-fade space-y-4" style={{ '--d': '0.2s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TYPE MAP</p>
-            <ParallelPlot userVector={userVector} clubVector={top1.club.vector} clubColor={clubColor} animDelay={0.35} />
-            <div className="flex gap-3 text-[10px] font-mono text-zinc-500 pt-1">
-              <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px bg-[#0e0e10]" />you</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px" style={{ backgroundColor: clubColor }} />{top1.club.name}</span>
-            </div>
+          <div className="dsRB-fade space-y-3" style={{ '--d': '0.15s' }}>
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TOP 3 RECOMMENDED</p>
+            <ol className="space-y-2">
+              {top3.map((m, i) => (
+                <li key={m.club.id} className="flex items-center gap-2.5">
+                  <span className="font-mono text-xs text-zinc-500 w-3 tabular-nums">{i + 1}</span>
+                  <span className="w-1 h-5 rounded-full" style={{ backgroundColor: m.club.color }} />
+                  <span className="flex-1 text-sm font-bold text-zinc-600 truncate">{m.club.name}</span>
+                  <span className="font-mono text-sm font-black tabular-nums" style={{ color: clubColor }}>{pct(m.score)}%</span>
+                </li>
+              ))}
+            </ol>
           </div>
         </aside>
 
@@ -549,42 +434,6 @@ export default async function ResultPage({ params, searchParams }) {
         </div>
       </div>
 
-      {/* 16 TYPES (常時展開) */}
-      <div className="border-t border-black/10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
-          <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-6">ALL 16 TYPES</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {Object.values(TYPE_META).map((t) => {
-              const isMine = t.code === userTypeCode
-              return (
-                <div
-                  key={t.code}
-                  className={`px-3 py-2.5 rounded-lg border ${isMine ? '' : 'border-black/10 bg-white'}`}
-                  style={
-                    isMine
-                      ? { borderColor: clubColor, backgroundColor: `${clubColor}0d` }
-                      : undefined
-                  }
-                >
-                  <p
-                    className="text-base sm:text-lg font-black tracking-[0.06em] tabular-nums leading-none"
-                    style={{ color: isMine ? clubColor : '#0e0e10' }}
-                  >
-                    {t.code}
-                  </p>
-                  <p
-                    className="text-xs sm:text-sm font-bold mt-1 leading-tight"
-                    style={{ color: isMine ? clubColor : undefined }}
-                  >
-                    {t.nickname}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* MORE LINKS (観戦ガイド / Jチケ / WINNER) */}
       <div className="border-t border-black/10">
         <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
@@ -616,9 +465,8 @@ export default async function ResultPage({ params, searchParams }) {
         <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 sm:py-12 flex flex-col gap-6 items-center sm:items-stretch">
           <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-6">
             <ShareButtons
-              typeCode={userTypeCode}
-              typeNickname={userType?.nickname}
               clubName={top1.club.name}
+              matchPct={pct(top1.score)}
             />
             <Link
               href="/quiz"
