@@ -4,7 +4,7 @@ import { loadResultData } from '@/lib/jlsp/result-page-data'
 // CLUB_META は loader 経由で DB override を反映済みのものを result-page-data から受け取る
 import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
-import { getWikiThumbnail, getWikiThumbnails } from '@/lib/jlsp/wiki-image'
+import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -77,14 +77,10 @@ export default async function ResultPage({ params, searchParams }) {
   const sightseeing = (
     clubMeta.sightseeingSpots ?? parseSightseeing(top1.club.sightseeing) ?? []
   ).slice(0, 3)
-  // Wikipedia (ja) からサムネ画像を並列取得。失敗したものは image:null で返るので
-  // テキストカードに自動 fallback できる。マスコット画像も同時取得。
-  const mascotWikiTitle =
-    clubMeta.mascot?.wikiTitle ?? clubMeta.mascot?.name ?? null
-  const [sightseeingCards, mascotInfo] = await Promise.all([
-    getWikiThumbnails(sightseeing),
-    mascotWikiTitle ? getWikiThumbnail(mascotWikiTitle) : Promise.resolve(null),
-  ])
+  // Wikipedia (ja) から観光地サムネを取得。失敗したものは image:null で返るので
+  // テキストカードに自動 fallback できる。観光地・建物は被写体に保護IPが無いので商用可。
+  // マスコットはクラブのキャラ著作権/商標のため画像は出さず名前のみ表示。
+  const sightseeingCards = await getWikiThumbnails(sightseeing)
   const description = clubMeta.descriptionLong ?? top1.club.description
   const lat = detail?.stadium?.home_stadium_lat
   const lng = detail?.stadium?.home_stadium_lng
@@ -209,47 +205,14 @@ export default async function ResultPage({ params, searchParams }) {
             </section>
           )}
 
-          {/* MASCOT */}
+          {/* MASCOT (名前のみ・キャラ画像はクラブのIPのため非表示) */}
           {clubMeta.mascot && (
             <section className="dsRB-fade" style={{ '--d': '0.24s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MASCOT</p>
               <div className="border-t border-black/10 pt-6">
-                <div className="flex gap-4 sm:gap-5 items-start">
-                  {mascotInfo?.image ? (
-                    <a
-                      href={mascotInfo.pageUrl ?? `https://ja.wikipedia.org/wiki/${encodeURIComponent(mascotWikiTitle)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0 block w-28 sm:w-36 rounded-lg overflow-hidden bg-zinc-100 ring-1 ring-black/5 hover:ring-black/30 transition"
-                      title="Wikipedia で見る"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={mascotInfo.image}
-                        alt={clubMeta.mascot.name}
-                        loading="lazy"
-                        className="w-full aspect-square object-cover object-top"
-                      />
-                    </a>
-                  ) : (
-                    <div
-                      className="shrink-0 w-28 sm:w-36 aspect-square rounded-lg flex items-center justify-center"
-                      style={{ background: `linear-gradient(135deg, ${clubColor}22, ${clubColor}55)` }}
-                    >
-                      <span className="text-3xl font-black text-white/80 select-none">
-                        {clubMeta.mascot.name.slice(0, 1)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xl sm:text-2xl font-black leading-tight" style={{ color: clubColor }}>
-                      {clubMeta.mascot.name}
-                    </p>
-                    {mascotInfo?.image && (
-                      <p className="text-[10px] text-zinc-400 mt-3">画像: Wikipedia (CC BY-SA)</p>
-                    )}
-                  </div>
-                </div>
+                <p className="text-xl sm:text-2xl font-black leading-tight" style={{ color: clubColor }}>
+                  {clubMeta.mascot.name}
+                </p>
               </div>
             </section>
           )}
