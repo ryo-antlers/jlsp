@@ -11,6 +11,15 @@ import CountUp from './CountUp'
 export const dynamic = 'force-dynamic'
 
 function pct(s) { return Math.round(s * 100) }
+// クラブ名を「漢字地名 ｜ カタカナ/英字 愛称」の境界で2行に分割する。
+// 例: 鹿島アントラーズ→[鹿島, アントラーズ] / ガンバ大阪→[ガンバ, 大阪] / FC東京→[FC, 東京]
+function splitClubName(name) {
+  let m = name.match(/^([一-鿿々ヶ]+)([゠-ヿA-Za-z].*)$/)
+  if (m) return [m[1], m[2]]
+  m = name.match(/^([゠-ヿ・A-Za-z.]+)([一-鿿々ヶ].*)$/)
+  if (m) return [m[1], m[2]]
+  return [name]
+}
 const JP_DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtMatchDate(d) {
   const x = new Date(d)
@@ -139,8 +148,10 @@ export default async function ResultPage({ params, searchParams }) {
           <section className="dsRB-fade" style={{ '--d': '0.05s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">YOUR CLUB</p>
             <div className="h-1 w-16 mb-5" style={{ backgroundColor: clubColor }} />
-            <h1 className="text-4xl sm:text-7xl font-black leading-[0.95] tracking-[-0.03em] mb-6 sm:mb-8">
-              {top1.club.name}
+            <h1 className="text-4xl sm:text-6xl font-black leading-[1.04] tracking-[-0.03em] mb-6 sm:mb-8">
+              {splitClubName(top1.club.name).map((ln, i) => (
+                <span key={i} className="block">{ln}</span>
+              ))}
             </h1>
             <div className="flex items-baseline gap-3 mb-5 flex-wrap">
               <span className="dsRB-bignum text-6xl sm:text-[7rem] font-black tabular-nums leading-none" style={{ color: clubColor }}>
