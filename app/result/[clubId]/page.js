@@ -5,6 +5,7 @@ import { loadResultData } from '@/lib/jlsp/result-page-data'
 import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
+import { getClubExtra } from '@/lib/jlsp/club-extra'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -75,7 +76,7 @@ export default async function ResultPage({ params, searchParams }) {
   const clubColor = top1.club.color
   const clubMeta = data.clubMeta ?? {}
   const alumni = clubMeta.notableAlumni ?? NOTABLE_ALUMNI[top1.club.id] ?? []
-  const alumniStats = data.alumniStats ?? {}
+  const extra = getClubExtra(top1.club.id)
   // DB に海外組データがあれば DB を信頼 (per-club 空 = 真に海外組ゼロ)。
   // DB 全体が空 (= migration 未適用 / 初回 sync 待ち) のときだけ静的 fallback。
   const overseas = overseasDataAvailable
@@ -116,30 +117,48 @@ export default async function ResultPage({ params, searchParams }) {
       {/* 3 COLUMN MAIN */}
       <div className="max-w-7xl mx-auto px-5 sm:px-10 py-8 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-x-10 gap-y-12 lg:gap-y-14">
 
-        {/* LEFT COLUMN — MATCH */}
+        {/* LEFT COLUMN — 相性 / 公式 / 成績 / 次節 */}
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
+          {/* 相性ゲージ */}
           <div className="dsRB-fade" style={{ '--d': '0s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">MATCH</p>
-            <div className="border-t-2 pt-4" style={{ borderColor: clubColor }}>
-              <p className="text-6xl xl:text-7xl font-black tabular-nums leading-none" style={{ color: clubColor }}>
-                {pct(top1.score)}<span className="text-2xl xl:text-3xl">%</span>
-              </p>
-              <p className="text-base xl:text-lg font-bold mt-2 leading-tight">{top1.club.name} との相性</p>
+            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MATCH</p>
+            <MatchGauge value={pct(top1.score)} color={clubColor} />
+            <p className="text-sm font-bold mt-3 text-center leading-tight">
+              {top1.club.name} との相性
+            </p>
+          </div>
+          {/* 公式リンク */}
+          {hasOfficial && (
+            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-2" style={{ '--d': '0.12s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">OFFICIAL</p>
+              {clubMeta.official.hp && <OfficialRow href={clubMeta.official.hp} label="公式 HP" clubColor={clubColor} />}
+              {clubMeta.official.x && <OfficialRow href={clubMeta.official.x} label="X (Twitter)" clubColor={clubColor} />}
+              {clubMeta.official.instagram && <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />}
             </div>
-          </div>
-          <div className="dsRB-fade space-y-3" style={{ '--d': '0.15s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TOP 3 RECOMMENDED</p>
-            <ol className="space-y-2">
-              {top3.map((m, i) => (
-                <li key={m.club.id} className="flex items-center gap-2.5">
-                  <span className="font-mono text-xs text-zinc-500 w-3 tabular-nums">{i + 1}</span>
-                  <span className="w-1 h-5 rounded-full" style={{ backgroundColor: m.club.color }} />
-                  <span className="flex-1 text-sm font-bold text-zinc-600 truncate">{m.club.name}</span>
-                  <span className="font-mono text-sm font-black tabular-nums" style={{ color: clubColor }}>{pct(m.score)}%</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+          )}
+          {/* 直近の成績 */}
+          {extra.recentResults?.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.2s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">RECENT</p>
+              <ul className="space-y-2">
+                {extra.recentResults.map((r) => (
+                  <li key={`${r.year}-${r.comp}`} className="flex items-baseline gap-3 border-b border-black/5 pb-2 last:border-0">
+                    <span className="font-mono text-xs text-zinc-500 tabular-nums w-9 shrink-0">{r.year}</span>
+                    <span className="text-[11px] font-mono text-zinc-500">{r.comp}</span>
+                    <span className="ml-auto text-sm font-black" style={{ color: clubColor }}>{r.place}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* 開幕の予定 (DB優先・無ければ手入力) */}
+          <NextMatches
+            dbMatches={detail?.upcomingMatches}
+            manual={extra.upcomingManual}
+            teamId={teamId}
+            clubColor={clubColor}
+            ticketUrl={clubMeta.ticketUrl}
+          />
         </aside>
 
         {/* CENTER COLUMN */}
@@ -216,18 +235,6 @@ export default async function ResultPage({ params, searchParams }) {
             </section>
           )}
 
-          {/* MASCOT (名前のみ・キャラ画像はクラブのIPのため非表示) */}
-          {clubMeta.mascot && (
-            <section className="dsRB-fade" style={{ '--d': '0.24s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MASCOT</p>
-              <div className="border-t border-black/10 pt-6">
-                <p className="text-xl sm:text-2xl font-black leading-tight" style={{ color: clubColor }}>
-                  {clubMeta.mascot.name}
-                </p>
-              </div>
-            </section>
-          )}
-
           {/* EXPLORE */}
           {sightseeingCards.length > 0 && (
             <section className="dsRB-fade" style={{ '--d': '0.28s' }}>
@@ -299,57 +306,16 @@ export default async function ResultPage({ params, searchParams }) {
           )}
         </main>
 
-        {/* RIGHT COLUMN — DATA STACK */}
+        {/* RIGHT COLUMN — 人 (OB / 海外組 / マスコット) */}
         <aside className="lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 sm:space-y-10 order-3">
-          {/* STANDINGS */}
-          {detail?.standings && <StandingsCard standings={detail.standings} clubColor={clubColor} />}
-
-          {/* OFFICIAL (HP / X / Instagram を縦積み) */}
-          {hasOfficial && (
-            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-2" style={{ '--d': '0.18s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">OFFICIAL</p>
-              {clubMeta.official.hp && (
-                <OfficialRow href={clubMeta.official.hp} label="公式 HP" clubColor={clubColor} />
-              )}
-              {clubMeta.official.x && (
-                <OfficialRow href={clubMeta.official.x} label="X (Twitter)" clubColor={clubColor} />
-              )}
-              {clubMeta.official.instagram && (
-                <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />
-              )}
-            </div>
-          )}
-
-          {/* NEXT MATCH */}
-          {detail?.upcomingMatches?.length > 0 && (
-            <UpcomingCard
-              matches={detail.upcomingMatches.slice(0, 3)}
-              teamId={teamId}
-              clubColor={clubColor}
-              ticketUrl={clubMeta.ticketUrl}
-            />
-          )}
-
-          {/* 主なOB選手 */}
+          {/* 主なOB選手 (スタッツ無し) */}
           {alumni.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">主なOB選手</p>
-              <ul className="space-y-2.5">
-                {alumni.map((name) => {
-                  const stats = alumniStats[name]
-                  return (
-                    <li key={name} className="leading-tight">
-                      <p className="text-sm font-bold">{name}</p>
-                      {stats && (stats.apps > 0 || stats.goals > 0) && (
-                        <p className="text-[11px] font-mono text-zinc-500 mt-0.5 tabular-nums">
-                          {stats.apps} 試合
-                          <span className="opacity-60"> · </span>
-                          {stats.goals} ゴール
-                        </p>
-                      )}
-                    </li>
-                  )
-                })}
+              <ul className="space-y-2">
+                {alumni.map((name) => (
+                  <li key={name} className="text-sm font-bold leading-tight">{name}</li>
+                ))}
               </ul>
             </div>
           )}
@@ -368,6 +334,21 @@ export default async function ResultPage({ params, searchParams }) {
                       {p.club}
                       {p.country && <span className="opacity-60"> · {p.country}</span>}
                     </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* マスコット (手入力・複数可・名前のみ) */}
+          {extra.mascots?.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.4s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">MASCOT</p>
+              <ul className="space-y-2.5">
+                {extra.mascots.map((m) => (
+                  <li key={m.name} className="leading-tight">
+                    <p className="text-sm font-bold" style={{ color: clubColor }}>{m.name}</p>
+                    {m.note && <p className="text-[11px] font-mono text-zinc-500 mt-0.5">{m.note}</p>}
                   </li>
                 ))}
               </ul>
@@ -546,20 +527,40 @@ function StatCell({ label, value, color }) {
  * 次の対戦カード。全試合を MatchLine スタイルで条目表示。
  * 1 試合目だけ右端に「あと N 日」 countdown を表示してわずかに強調。
  */
-function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
-  if (!matches.length) return null
+/** 相性スコアのドーナツ型ゲージ。 */
+function MatchGauge({ value, color }) {
+  const r = 50
+  const circ = 2 * Math.PI * r
+  const off = circ * (1 - Math.max(0, Math.min(100, value)) / 100)
   return (
-    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.2s' }}>
+    <svg viewBox="0 0 120 120" className="block w-full max-w-[190px] mx-auto" role="img" aria-label={`相性 ${value}%`}>
+      <circle cx="60" cy="60" r={r} fill="none" stroke="#0e0e10" strokeOpacity="0.08" strokeWidth="11" />
+      <circle
+        cx="60" cy="60" r={r} fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
+        strokeDasharray={circ} strokeDashoffset={off} transform="rotate(-90 60 60)"
+      />
+      <text x="60" y="62" textAnchor="middle" fontSize="34" fontWeight="900" fill={color} style={{ fontFamily: 'var(--font-geist-sans)' }}>{value}</text>
+      <text x="60" y="80" textAnchor="middle" fontSize="9" fill="#9a9a92" letterSpacing="2" style={{ fontFamily: 'var(--font-geist-mono)' }}>% MATCH</text>
+    </svg>
+  )
+}
+
+/** 開幕戦などの予定。DB の upcomingMatches を優先、無ければ手入力 manual を表示。 */
+function NextMatches({ dbMatches, manual, teamId, ticketUrl }) {
+  const hasDb = dbMatches?.length > 0
+  const hasManual = manual?.length > 0
+  if (!hasDb && !hasManual) return null
+  return (
+    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.28s' }}>
       <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">NEXT MATCH</p>
       <div className="space-y-3">
-        {matches.map((m, i) => (
-          <MatchLine
-            key={m.id}
-            match={m}
-            teamId={teamId}
-            showVenue={i === 0}
-          />
-        ))}
+        {hasDb
+          ? dbMatches.slice(0, 2).map((m, i) => (
+              <MatchLine key={m.id} match={m} teamId={teamId} showVenue={i === 0} />
+            ))
+          : manual.slice(0, 2).map((m, i) => (
+              <ManualMatchLine key={i} match={m} showVenue={i === 0} />
+            ))}
       </div>
       {ticketUrl && (
         <a
@@ -571,6 +572,27 @@ function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
           Jリーグチケット で買う →
         </a>
       )}
+    </div>
+  )
+}
+
+/** 手入力 fixture 用の 1 行。 */
+function ManualMatchLine({ match, showVenue = false }) {
+  const t = fmtMatchDate(match.date)
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="text-right shrink-0 w-12">
+        <p className="text-xs font-bold tabular-nums leading-none">{t.month}/{t.day}</p>
+        <p className="text-[9px] font-mono text-zinc-500 mt-0.5">({t.dow})</p>
+      </div>
+      <span className="block w-0.5 h-7 rounded-full shrink-0" style={{ backgroundColor: '#a1a1aa' }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
+          {match.home ? 'HOME' : 'AWAY'}
+          {showVenue && match.venue && <span className="opacity-70"> · {match.venue}</span>}
+        </p>
+        <p className="text-xs font-bold truncate leading-tight">vs {match.opponent}</p>
+      </div>
     </div>
   )
 }
