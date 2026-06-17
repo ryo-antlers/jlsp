@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { CLUBS } from '../lib/jlsp/clubs.js'
 
 const NAME = Object.fromEntries(CLUBS.map((c) => [c.id, c.name]))
-const STANDINGS = JSON.parse(readFileSync(new URL('./standings_2022_2025.json', import.meta.url)))
+const STANDINGS = JSON.parse(readFileSync(new URL('./standings_recent.json', import.meta.url)))
 
 const STADIUM = {
   kashima: 'メルカリスタジアム', urawa: '埼玉スタジアム2002',
@@ -67,7 +67,7 @@ for (const id of Object.keys(fixturesByClub)) fixturesByClub[id].sort((a, b) => 
 // recentResults (2022-2025 昇順)
 function recentResults(id) {
   const s = STANDINGS[id] || {}
-  return [2022, 2023, 2024, 2025]
+  return [2022, 2023, 2024, 2025, 2026]
     .filter((y) => s[y])
     .map((y) => ({ year: y, comp: s[y].league, place: s[y].rank === 1 ? '優勝' : `${s[y].rank}位` }))
 }
