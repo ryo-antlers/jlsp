@@ -34,7 +34,7 @@ const COUNTRY_FLAG = {
 }
 function flagUrl(country) {
   const c = COUNTRY_FLAG[country]
-  return c ? `https://flagcdn.com/h20/${c}.png` : null
+  return c ? `https://cdn.jsdelivr.net/gh/HatScripts/circle-flags/flags/${c}.svg` : null
 }
 const JP_DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtMatchDate(d) {
@@ -335,14 +335,14 @@ export default async function ResultPage({ params, searchParams }) {
                 {overseas.map((p) => {
                   const flag = flagUrl(p.country)
                   return (
-                    <li key={p.name} className="flex items-center gap-2 leading-tight whitespace-nowrap">
+                    <li key={p.name} className="flex items-center gap-1.5 leading-tight whitespace-nowrap">
                       <span className="text-sm font-bold shrink-0">{p.name}</span>
                       <span className="text-[11px] font-mono text-zinc-500 truncate min-w-0">{p.club}</span>
                       {flag ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={flag} alt={p.country} loading="lazy" className="h-3.5 w-auto shrink-0 ml-auto rounded-[1px] ring-1 ring-black/10" />
+                        <img src={flag} alt={p.country} loading="lazy" className="w-4 h-4 shrink-0 rounded-full" />
                       ) : (
-                        p.country && <span className="text-[10px] font-mono text-zinc-400 shrink-0 ml-auto">{p.country}</span>
+                        p.country && <span className="text-[10px] font-mono text-zinc-400 shrink-0">{p.country}</span>
                       )}
                     </li>
                   )
