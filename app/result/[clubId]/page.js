@@ -248,7 +248,7 @@ export default async function ResultPage({ params, searchParams }) {
                       href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(shown)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group relative block aspect-[3/4] overflow-hidden rounded-lg bg-zinc-100"
+                      className="group relative block aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100"
                     >
                       {image ? (
                         // eslint-disable-next-line @next/next/no-img-element
