@@ -559,14 +559,14 @@ function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
   const hasManual = manual?.length > 0
   if (!hasDb && !hasManual) return null
   const cards = hasDb
-    ? dbMatches.slice(0, 2).map((m) => ({
+    ? dbMatches.slice(0, 5).map((m) => ({
         key: m.id,
         isHome: m.home_team_id === teamId,
         t: fmtMatchDate(m.date),
         opponent: m.home_team_id === teamId ? m.away_name : m.home_name,
         venue: m.venue_name_ja,
       }))
-    : manual.slice(0, 2).map((m, i) => ({
+    : manual.slice(0, 5).map((m, i) => ({
         key: i,
         isHome: m.home,
         t: fmtMatchDate(m.date),
