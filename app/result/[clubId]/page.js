@@ -454,107 +454,6 @@ export default async function ResultPage({ params, searchParams }) {
  * 右カラム最上段の順位カード。
  * クラブカラーの帯と大きな順位、前節からの delta、得失点、直近5の勝敗を一枚にまとめる。
  */
-function StandingsCard({ standings, clubColor }) {
-  const delta =
-    standings.prev_rank != null && standings.rank != null
-      ? standings.prev_rank - standings.rank
-      : 0
-  const gd = (standings.goals_for ?? 0) - (standings.goals_against ?? 0)
-
-  return (
-    <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
-      <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">
-        STANDINGS
-        {standings.group_name && (
-          <span className="opacity-50 ml-2">{standings.group_name}</span>
-        )}
-      </p>
-      {/* 順位 + delta */}
-      <div
-        className="relative overflow-hidden rounded-lg px-4 pt-4 pb-3 text-white"
-        style={{ backgroundColor: clubColor }}
-      >
-        <div className="flex items-end justify-between">
-          <div className="leading-none">
-            <span className="dsRB-bignum text-[5.5rem] font-black tabular-nums">
-              {standings.rank}
-            </span>
-            <span className="text-2xl font-black opacity-80 ml-1">位</span>
-          </div>
-          {delta !== 0 && (
-            <div className="flex items-center gap-1 pb-3 pr-1">
-              <span className={`text-xl font-black ${delta > 0 ? 'text-white' : 'text-white/85'}`}>
-                {delta > 0 ? '▲' : '▼'}
-              </span>
-              <span className="text-xl font-black tabular-nums">{Math.abs(delta)}</span>
-            </div>
-          )}
-          {delta === 0 && standings.prev_rank != null && (
-            <span className="text-xs font-mono opacity-70 pb-3 pr-1">—</span>
-          )}
-        </div>
-        <p className="text-[10px] font-mono tracking-[0.18em] opacity-85 mt-1">
-          {standings.played}試合 · {standings.points}pt
-        </p>
-      </div>
-
-      {/* W-D-L grid */}
-      <div className="grid grid-cols-3 gap-px bg-black/5 mt-px rounded-b-lg overflow-hidden">
-        <StatCell label="勝" value={standings.win} color="#22c55e" />
-        <StatCell label="分" value={standings.draw} color="#71717a" />
-        <StatCell label="敗" value={standings.lose} color="#f97316" />
-      </div>
-
-      {/* Goals */}
-      <div className="flex items-baseline justify-between mt-4 text-xs">
-        <span className="font-mono text-[10px] text-zinc-500 tracking-[0.15em]">GOALS</span>
-        <span className="font-mono tabular-nums">
-          <span className="font-bold text-zinc-700">{standings.goals_for}</span>
-          <span className="text-zinc-400 mx-1">/</span>
-          <span className="text-zinc-500">{standings.goals_against}</span>
-          <span className={`ml-2 font-black ${gd > 0 ? 'text-emerald-600' : gd < 0 ? 'text-rose-600' : 'text-zinc-500'}`}>
-            {gd > 0 ? '+' : ''}{gd}
-          </span>
-        </span>
-      </div>
-
-    </div>
-  )
-}
-
-function StatCell({ label, value, color }) {
-  return (
-    <div className="bg-white flex items-baseline justify-center gap-1 py-2">
-      <span className="text-xl font-black tabular-nums" style={{ color }}>
-        {value ?? 0}
-      </span>
-      <span className="text-[10px] font-bold text-zinc-500">{label}</span>
-    </div>
-  )
-}
-
-/**
- * 次の対戦カード。全試合を MatchLine スタイルで条目表示。
- * 1 試合目だけ右端に「あと N 日」 countdown を表示してわずかに強調。
- */
-/** 相性スコアのドーナツ型ゲージ。 */
-function MatchGauge({ value, color }) {
-  const r = 50
-  const circ = 2 * Math.PI * r
-  const off = circ * (1 - Math.max(0, Math.min(100, value)) / 100)
-  return (
-    <svg viewBox="0 0 120 120" className="block w-full max-w-[190px] mx-auto" role="img" aria-label={`相性 ${value}%`}>
-      <circle cx="60" cy="60" r={r} fill="none" stroke="#0e0e10" strokeOpacity="0.08" strokeWidth="11" />
-      <circle
-        cx="60" cy="60" r={r} fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
-        strokeDasharray={circ} strokeDashoffset={off} transform="rotate(-90 60 60)"
-      />
-      <text x="60" y="62" textAnchor="middle" fontSize="34" fontWeight="900" fill={color} style={{ fontFamily: 'var(--font-geist-sans)' }}>{value}</text>
-      <text x="60" y="80" textAnchor="middle" fontSize="9" fill="#9a9a92" letterSpacing="2" style={{ fontFamily: 'var(--font-geist-mono)' }}>% MATCH</text>
-    </svg>
-  )
-}
-
 /** 開幕戦などの予定。DB の upcomingMatches を優先、無ければ手入力 manual を表示。 */
 function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
   const hasDb = dbMatches?.length > 0
@@ -616,23 +515,6 @@ function MatchCard({ isHome, t, opponent, venue, clubColor }) {
       <p className="text-[15px] font-bold leading-tight truncate">vs {opponent}</p>
       {venue && <p className="text-[10px] text-zinc-500 mt-0.5 truncate">{venue}</p>}
     </div>
-  )
-}
-
-function OfficialLink({ href, label }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block border border-black/10 hover:border-black px-3 py-2.5 rounded-lg bg-white transition-colors group"
-    >
-      <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-0.5">LINK</p>
-      <p className="text-xs sm:text-sm font-bold flex items-center justify-between">
-        <span>{label}</span>
-        <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
-      </p>
-    </a>
   )
 }
 
