@@ -128,17 +128,21 @@ export default async function ResultPage({ params, searchParams }) {
               {clubMeta.official.instagram && <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />}
             </div>
           )}
-          {/* 直近の成績 (タイムライン) */}
+          {/* 直近の成績 (タイムライン・中空リング) */}
           {extra.recentResults?.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.2s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">RECENT</p>
-              <ol className="relative pl-4">
-                <span className="absolute left-[3px] top-1 bottom-1 w-px bg-black/10" aria-hidden />
+              <ol className="relative pl-[18px]">
+                <span className="absolute left-1 top-1.5 bottom-1.5 w-px bg-black/10" aria-hidden />
                 {extra.recentResults.map((r) => (
-                  <li key={`${r.year}-${r.comp}`} className="relative pb-3.5 last:pb-0">
-                    <span className="absolute -left-4 top-[5px] w-2 h-2 rounded-full" style={{ backgroundColor: clubColor }} aria-hidden />
-                    <p className="text-[11px] font-mono text-zinc-500 tabular-nums leading-none">{r.year} · {r.comp}</p>
-                    <p className="text-[13px] font-bold text-zinc-900 mt-1 leading-none">{r.place}</p>
+                  <li key={`${r.year}-${r.comp}`} className="relative pb-[18px] last:pb-0">
+                    <span
+                      className="absolute -left-[18px] top-0.5 w-[9px] h-[9px] rounded-full box-border"
+                      style={{ backgroundColor: '#fafaf7', border: `2px solid ${clubColor}` }}
+                      aria-hidden
+                    />
+                    <p className="text-[11px] font-mono text-zinc-400 tabular-nums leading-none tracking-wide">{r.year} · {r.comp}</p>
+                    <p className="text-[15px] font-bold text-zinc-900 mt-1 leading-none">{r.place}</p>
                   </li>
                 ))}
               </ol>
@@ -561,9 +565,11 @@ function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
   return (
     <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.28s' }}>
       <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">NEXT MATCH</p>
-      <div className="space-y-2.5">
+      <div>
         {cards.map((c) => (
-          <MatchCard key={c.key} isHome={c.isHome} t={c.t} opponent={c.opponent} venue={c.venue} clubColor={clubColor} />
+          <div key={c.key} className="border-t border-black/5 pt-3 mt-3 first:border-t-0 first:pt-0 first:mt-0">
+            <MatchCard isHome={c.isHome} t={c.t} opponent={c.opponent} venue={c.venue} clubColor={clubColor} />
+          </div>
         ))}
       </div>
       {ticketUrl && (
@@ -580,25 +586,21 @@ function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
   )
 }
 
-/** 次節カード (HOME=クラブカラー / AWAY=グレーの左帯)。 */
+/** 次節 1試合 (対戦チップ型: HOME/AWAY をピルで表示)。 */
 function MatchCard({ isHome, t, opponent, venue, clubColor }) {
   return (
-    <div
-      className="border-[0.5px] border-black/10 rounded-lg px-3 py-2.5"
-      style={{ borderLeftWidth: '3px', borderLeftColor: isHome ? clubColor : '#b4b4ac' }}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-mono font-bold tabular-nums">
-          {t.month}/{t.day}<span className="text-zinc-400">({t.dow})</span>
-        </span>
+    <div>
+      <div className="flex items-baseline gap-2 mb-1.5">
+        <span className="text-[13px] font-mono font-bold tabular-nums">{t.month}/{t.day}</span>
+        <span className="text-[10px] text-zinc-400">({t.dow})</span>
         <span
-          className="text-[9px] font-bold rounded px-2 py-0.5 tracking-wider"
+          className="ml-auto text-[9px] font-bold rounded-full px-2.5 py-0.5 tracking-wider"
           style={isHome ? { color: '#fff', backgroundColor: clubColor } : { color: '#52525b', backgroundColor: '#e4e4e0' }}
         >
           {isHome ? 'HOME' : 'AWAY'}
         </span>
       </div>
-      <p className="text-sm font-bold leading-tight truncate">vs {opponent}</p>
+      <p className="text-[15px] font-bold leading-tight truncate">vs {opponent}</p>
       {venue && <p className="text-[10px] text-zinc-500 mt-0.5 truncate">{venue}</p>}
     </div>
   )
