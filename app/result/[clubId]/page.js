@@ -128,19 +128,20 @@ export default async function ResultPage({ params, searchParams }) {
               {clubMeta.official.instagram && <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />}
             </div>
           )}
-          {/* 直近の成績 */}
+          {/* 直近の成績 (タイムライン) */}
           {extra.recentResults?.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.2s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">RECENT</p>
-              <ul className="space-y-2">
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">RECENT</p>
+              <ol className="relative pl-4">
+                <span className="absolute left-[3px] top-1 bottom-1 w-px bg-black/10" aria-hidden />
                 {extra.recentResults.map((r) => (
-                  <li key={`${r.year}-${r.comp}`} className="flex items-baseline gap-3 border-b border-black/5 pb-2 last:border-0">
-                    <span className="font-mono text-xs text-zinc-500 tabular-nums w-9 shrink-0">{r.year}</span>
-                    <span className="text-[11px] font-mono text-zinc-500">{r.comp}</span>
-                    <span className="ml-auto text-sm font-black" style={{ color: clubColor }}>{r.place}</span>
+                  <li key={`${r.year}-${r.comp}`} className="relative pb-3.5 last:pb-0">
+                    <span className="absolute -left-4 top-[5px] w-2 h-2 rounded-full" style={{ backgroundColor: clubColor }} aria-hidden />
+                    <p className="text-[11px] font-mono text-zinc-500 tabular-nums leading-none">{r.year} · {r.comp}</p>
+                    <p className="text-[13px] font-bold text-zinc-900 mt-1 leading-none">{r.place}</p>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </div>
           )}
           {/* 開幕の予定 (DB優先・無ければ手入力) */}
@@ -538,21 +539,32 @@ function MatchGauge({ value, color }) {
 }
 
 /** 開幕戦などの予定。DB の upcomingMatches を優先、無ければ手入力 manual を表示。 */
-function NextMatches({ dbMatches, manual, teamId, ticketUrl }) {
+function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
   const hasDb = dbMatches?.length > 0
   const hasManual = manual?.length > 0
   if (!hasDb && !hasManual) return null
+  const cards = hasDb
+    ? dbMatches.slice(0, 2).map((m) => ({
+        key: m.id,
+        isHome: m.home_team_id === teamId,
+        t: fmtMatchDate(m.date),
+        opponent: m.home_team_id === teamId ? m.away_name : m.home_name,
+        venue: m.venue_name_ja,
+      }))
+    : manual.slice(0, 2).map((m, i) => ({
+        key: i,
+        isHome: m.home,
+        t: fmtMatchDate(m.date),
+        opponent: m.opponent,
+        venue: m.venue,
+      }))
   return (
     <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.28s' }}>
       <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">NEXT MATCH</p>
-      <div className="space-y-3">
-        {hasDb
-          ? dbMatches.slice(0, 2).map((m, i) => (
-              <MatchLine key={m.id} match={m} teamId={teamId} showVenue={i === 0} />
-            ))
-          : manual.slice(0, 2).map((m, i) => (
-              <ManualMatchLine key={i} match={m} showVenue={i === 0} />
-            ))}
+      <div className="space-y-2.5">
+        {cards.map((c) => (
+          <MatchCard key={c.key} isHome={c.isHome} t={c.t} opponent={c.opponent} venue={c.venue} clubColor={clubColor} />
+        ))}
       </div>
       {ticketUrl && (
         <a
@@ -568,53 +580,26 @@ function NextMatches({ dbMatches, manual, teamId, ticketUrl }) {
   )
 }
 
-/** 手入力 fixture 用の 1 行。 */
-function ManualMatchLine({ match, showVenue = false }) {
-  const t = fmtMatchDate(match.date)
+/** 次節カード (HOME=クラブカラー / AWAY=グレーの左帯)。 */
+function MatchCard({ isHome, t, opponent, venue, clubColor }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="text-right shrink-0 w-12">
-        <p className="text-xs font-bold tabular-nums leading-none">{t.month}/{t.day}</p>
-        <p className="text-[9px] font-mono text-zinc-500 mt-0.5">({t.dow})</p>
-      </div>
-      <span className="block w-0.5 h-7 rounded-full shrink-0" style={{ backgroundColor: '#a1a1aa' }} />
-      <div className="flex-1 min-w-0">
-        <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
-          {match.home ? 'HOME' : 'AWAY'}
-          {showVenue && match.venue && <span className="opacity-70"> · {match.venue}</span>}
-        </p>
-        <p className="text-xs font-bold truncate leading-tight">vs {match.opponent}</p>
-      </div>
-    </div>
-  )
-}
-
-function MatchLine({ match, teamId, showVenue = false }) {
-  const isHome = match.home_team_id === teamId
-  const oppName = isHome ? match.away_name : match.home_name
-  const oppColor = isHome ? match.away_color : match.home_color
-  const t = fmtMatchDate(match.date)
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="text-right shrink-0 w-12">
-        <p className="text-xs font-bold tabular-nums leading-none">
-          {t.month}/{t.day}
-        </p>
-        <p className="text-[9px] font-mono text-zinc-500 mt-0.5">({t.dow})</p>
-      </div>
-      <span
-        className="block w-0.5 h-7 rounded-full shrink-0"
-        style={{ backgroundColor: oppColor ?? '#a1a1aa' }}
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
+    <div
+      className="border-[0.5px] border-black/10 rounded-lg px-3 py-2.5"
+      style={{ borderLeftWidth: '3px', borderLeftColor: isHome ? clubColor : '#b4b4ac' }}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-mono font-bold tabular-nums">
+          {t.month}/{t.day}<span className="text-zinc-400">({t.dow})</span>
+        </span>
+        <span
+          className="text-[9px] font-bold rounded px-2 py-0.5 tracking-wider"
+          style={isHome ? { color: '#fff', backgroundColor: clubColor } : { color: '#52525b', backgroundColor: '#e4e4e0' }}
+        >
           {isHome ? 'HOME' : 'AWAY'}
-          {showVenue && match.venue_name_ja && (
-            <span className="opacity-70"> · {match.venue_name_ja}</span>
-          )}
-        </p>
-        <p className="text-xs font-bold truncate leading-tight">vs {oppName}</p>
+        </span>
       </div>
+      <p className="text-sm font-bold leading-tight truncate">vs {opponent}</p>
+      {venue && <p className="text-[10px] text-zinc-500 mt-0.5 truncate">{venue}</p>}
     </div>
   )
 }
