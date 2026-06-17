@@ -141,7 +141,7 @@ export default async function ResultPage({ params, searchParams }) {
                       style={{ backgroundColor: '#fafaf7', border: `2px solid ${clubColor}` }}
                       aria-hidden
                     />
-                    <p className="text-[11px] font-mono text-zinc-400 tabular-nums leading-none tracking-wide">{r.year} · {r.comp}</p>
+                    <p className="text-[11px] font-mono text-zinc-900 tabular-nums leading-none tracking-wide">{r.year}/{r.comp}</p>
                     <p className="text-[15px] font-bold text-zinc-900 mt-1 leading-none">{r.place}</p>
                   </li>
                 ))}
