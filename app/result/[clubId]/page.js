@@ -21,6 +21,21 @@ function splitClubName(name) {
   if (m) return [m[1], m[2]]
   return [name]
 }
+// 国名(日本語) → flagcdn の国コード。海外組の国旗画像用。
+const COUNTRY_FLAG = {
+  'ドイツ': 'de', 'オランダ': 'nl', 'スイス': 'ch', 'ベルギー': 'be', 'フランス': 'fr',
+  'スペイン': 'es', 'イタリア': 'it', 'ポルトガル': 'pt', 'オーストリア': 'at',
+  'クロアチア': 'hr', 'デンマーク': 'dk', 'ノルウェー': 'no', 'スウェーデン': 'se',
+  'ポーランド': 'pl', 'トルコ': 'tr', 'ギリシャ': 'gr', 'チェコ': 'cz', 'ハンガリー': 'hu',
+  'イングランド': 'gb-eng', 'スコットランド': 'gb-sct', 'ウェールズ': 'gb-wls',
+  'アメリカ': 'us', 'アメリカ合衆国': 'us', 'メキシコ': 'mx', 'ブラジル': 'br',
+  'オーストラリア': 'au', 'タイ': 'th', '韓国': 'kr', '大韓民国': 'kr',
+  'カタール': 'qa', 'サウジアラビア': 'sa', 'アラブ首長国連邦': 'ae', 'UAE': 'ae',
+}
+function flagUrl(country) {
+  const c = COUNTRY_FLAG[country]
+  return c ? `https://flagcdn.com/h20/${c}.png` : null
+}
 const JP_DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtMatchDate(d) {
   const x = new Date(d)
@@ -317,15 +332,21 @@ export default async function ResultPage({ params, searchParams }) {
                 現在 海外でプレー中
               </p>
               <ul className="space-y-2.5">
-                {overseas.map((p) => (
-                  <li key={p.name} className="leading-tight">
-                    <p className="text-sm font-bold">{p.name}</p>
-                    <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
-                      {p.club}
-                      {p.country && <span className="opacity-60"> · {p.country}</span>}
-                    </p>
-                  </li>
-                ))}
+                {overseas.map((p) => {
+                  const flag = flagUrl(p.country)
+                  return (
+                    <li key={p.name} className="flex items-center gap-2 leading-tight whitespace-nowrap">
+                      <span className="text-sm font-bold shrink-0">{p.name}</span>
+                      <span className="text-[11px] font-mono text-zinc-500 truncate min-w-0">{p.club}</span>
+                      {flag ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={flag} alt={p.country} loading="lazy" className="h-3.5 w-auto shrink-0 ml-auto rounded-[1px] ring-1 ring-black/10" />
+                      ) : (
+                        p.country && <span className="text-[10px] font-mono text-zinc-400 shrink-0 ml-auto">{p.country}</span>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}
@@ -333,13 +354,10 @@ export default async function ResultPage({ params, searchParams }) {
           {/* マスコット (手入力・複数可・名前のみ) */}
           {extra.mascots?.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.4s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">MASCOT</p>
-              <ul className="space-y-2.5">
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">マスコット</p>
+              <ul className="space-y-2">
                 {extra.mascots.map((m) => (
-                  <li key={m.name} className="leading-tight">
-                    <p className="text-sm font-bold" style={{ color: clubColor }}>{m.name}</p>
-                    {m.note && <p className="text-[11px] font-mono text-zinc-500 mt-0.5">{m.note}</p>}
-                  </li>
+                  <li key={m.name} className="text-sm font-bold leading-tight">{m.name}</li>
                 ))}
               </ul>
             </div>
