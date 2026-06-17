@@ -323,12 +323,12 @@ export default async function ResultPage({ params, searchParams }) {
 
         {/* RIGHT COLUMN — 人 (OB / 海外組 / マスコット) */}
         <aside className="lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 sm:space-y-10 order-3">
-          {/* 主なOB選手 (スタッツ無し) */}
-          {alumni.length > 0 && (
-            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">主なOB選手</p>
+          {/* 現在所属の有名選手 (admin手入力) */}
+          {clubMeta.currentPlayers?.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.28s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">現在の有名選手</p>
               <ul className="space-y-2">
-                {alumni.map((name) => (
+                {clubMeta.currentPlayers.map((name) => (
                   <li key={name} className="text-sm font-bold leading-tight">{name}</li>
                 ))}
               </ul>
@@ -337,7 +337,7 @@ export default async function ResultPage({ params, searchParams }) {
 
           {/* 現在 海外でプレー中の OB */}
           {overseas.length > 0 && (
-            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.35s' }}>
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.32s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">
                 現在 海外でプレー中
               </p>
@@ -357,6 +357,18 @@ export default async function ResultPage({ params, searchParams }) {
                     </li>
                   )
                 })}
+              </ul>
+            </div>
+          )}
+
+          {/* 有名OB (スタッツ無し) */}
+          {alumni.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.36s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">有名OB</p>
+              <ul className="space-y-2">
+                {alumni.map((name) => (
+                  <li key={name} className="text-sm font-bold leading-tight">{name}</li>
+                ))}
               </ul>
             </div>
           )}

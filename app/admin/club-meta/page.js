@@ -36,6 +36,7 @@ async function loadData() {
         staticSightseeing: SIGHTSEEING_SPOTS[c.id] ?? null,   // string[] | null
         staticAlumni: NOTABLE_ALUMNI[c.id] ?? null,           // string[] | null
         overrideDescriptionLong: o?.description_long ?? '',
+        overrideCurrentPlayers: Array.isArray(o?.current_players) ? o.current_players : null,  // string[] | null
         overrideMascots: Array.isArray(o?.mascots) ? o.mascots : null,  // string[] | null
         overrideStadium: o?.stadium ?? '',
         overrideSightseeing: Array.isArray(o?.sightseeing) ? o.sightseeing : null,
@@ -55,6 +56,7 @@ export default async function ClubMetaAdminPage() {
   const overriddenCount = clubs.filter(
     (c) =>
       c.overrideDescriptionLong ||
+      c.overrideCurrentPlayers ||
       c.overrideMascots ||
       c.overrideStadium ||
       c.overrideSightseeing ||

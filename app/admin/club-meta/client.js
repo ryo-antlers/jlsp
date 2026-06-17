@@ -27,6 +27,7 @@ function ClubRow({ club, open, onToggle }) {
   const hasOverride = !!(
     club.overrideDescriptionLong ||
     club.overrideStadium ||
+    (club.overrideCurrentPlayers && club.overrideCurrentPlayers.length) ||
     (club.overrideMascots && club.overrideMascots.length) ||
     (club.overrideSightseeing && club.overrideSightseeing.length) ||
     (club.overrideAlumni && club.overrideAlumni.length)
@@ -60,6 +61,7 @@ function ClubEditor({ club }) {
     club.overrideDescriptionLong || club.staticDescriptionLong,
   )
   const [stadium, setStadium] = useState(club.overrideStadium ?? '')
+  const [currentPlayersText, setCurrentPlayersText] = useState((club.overrideCurrentPlayers ?? []).join('\n'))
   const [mascotsText, setMascotsText] = useState((club.overrideMascots ?? []).join('\n'))
   const [sightseeingText, setSightseeingText] = useState(
     (club.overrideSightseeing ?? club.staticSightseeing ?? []).join('\n'),
@@ -105,6 +107,7 @@ function ClubEditor({ club }) {
       setSaved(false)
       setError(null)
       try {
+        const currentArr = linesToArr(currentPlayersText)
         const mascotsArr = linesToArr(mascotsText)
         const sightseeingArr = linesToArr(sightseeingText)
         const alumniArr = linesToArr(alumniText)
@@ -118,6 +121,7 @@ function ClubEditor({ club }) {
             // 静的デフォルトと一致する値は null で保存 (= override クリア扱い)
             description_long:
               descriptionLong && descriptionLong !== club.staticDescriptionLong ? descriptionLong : null,
+            current_players: currentArr.length ? currentArr : null,
             mascots: mascotsArr.length ? mascotsArr : null,
             stadium: stadium.trim() || null,
             sightseeing: sightseeingArr.length && !eq(sightseeingArr, club.staticSightseeing) ? sightseeingArr : null,
@@ -168,6 +172,20 @@ function ClubEditor({ club }) {
         />
       </section>
 
+      {/* CURRENT PLAYERS */}
+      <section className="border-t border-zinc-800 pt-4">
+        <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mb-2">
+          現在所属の有名選手 (1 行 1 名、上から順に表示)
+        </p>
+        <textarea
+          value={currentPlayersText}
+          onChange={(e) => setCurrentPlayersText(e.target.value)}
+          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 leading-relaxed resize-y min-h-[100px]"
+          placeholder={'鈴木優磨\n知念慶'}
+        />
+        <p className="text-[10px] text-zinc-500 mt-1">現在 {linesToArr(currentPlayersText).length} 名</p>
+      </section>
+
       {/* MASCOTS */}
       <section className="border-t border-zinc-800 pt-4">
         <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mb-2">
@@ -213,7 +231,7 @@ function ClubEditor({ club }) {
       <section className="border-t border-zinc-800 pt-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
-            主なOB選手 (1 行 1 名、上から順に表示)
+            有名OB (1 行 1 名、上から順に表示)
           </p>
           <SmallBtn onClick={loadStaticAlumni}>静的に戻す ←</SmallBtn>
         </div>

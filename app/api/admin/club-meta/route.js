@@ -31,6 +31,7 @@ export async function POST(req) {
     stadium: nonEmpty(body.stadium),
     sightseeing: nonEmptyArray(body.sightseeing),
     notable_alumni: nonEmptyArray(body.notable_alumni),
+    current_players: nonEmptyArray(body.current_players),
   }
   const allEmpty = Object.values(fields).every((v) => v == null)
   try {
