@@ -119,17 +119,9 @@ export default async function ResultPage({ params, searchParams }) {
 
         {/* LEFT COLUMN — 相性 / 公式 / 成績 / 次節 */}
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
-          {/* 相性ゲージ */}
-          <div className="dsRB-fade" style={{ '--d': '0s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MATCH</p>
-            <MatchGauge value={pct(top1.score)} color={clubColor} />
-            <p className="text-sm font-bold mt-3 text-center leading-tight">
-              {top1.club.name} との相性
-            </p>
-          </div>
           {/* 公式リンク */}
           {hasOfficial && (
-            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-2" style={{ '--d': '0.12s' }}>
+            <div className="dsRB-fade space-y-2" style={{ '--d': '0.12s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">OFFICIAL</p>
               {clubMeta.official.hp && <OfficialRow href={clubMeta.official.hp} label="公式 HP" clubColor={clubColor} />}
               {clubMeta.official.x && <OfficialRow href={clubMeta.official.x} label="X (Twitter)" clubColor={clubColor} />}
