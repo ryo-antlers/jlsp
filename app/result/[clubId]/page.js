@@ -376,7 +376,7 @@ export default async function ResultPage({ params, searchParams }) {
                   <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
                   <span className="w-1 h-6 rounded-full" style={{ backgroundColor: m.club.color }} />
                   <span className="flex-1 text-base font-bold text-zinc-600 truncate">{m.club.name}</span>
-                  <span className="font-mono text-base font-black tabular-nums" style={{ color: clubColor }}>{pct(m.score)}%</span>
+                  <span className="font-mono text-base font-black tabular-nums" style={{ color: m.club.color }}>{pct(m.score)}%</span>
                 </li>
               ))}
             </ol>
