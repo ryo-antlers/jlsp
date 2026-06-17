@@ -109,6 +109,8 @@ export default async function ResultPage({ params, searchParams }) {
   const description = clubMeta.descriptionLong ?? top1.club.description
   const lat = detail?.stadium?.home_stadium_lat
   const lng = detail?.stadium?.home_stadium_lng
+  // スタジアム名: admin override > jleakstats 同期名
+  const stadiumName = clubMeta.stadium ?? detail?.stadium?.home_stadium_name
   const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null
   const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
@@ -204,15 +206,15 @@ export default async function ResultPage({ params, searchParams }) {
           </section>
 
           {/* STADIUM */}
-          {detail?.stadium?.home_stadium_name && (
+          {stadiumName && (
             <section className="dsRB-fade" style={{ '--d': '0.2s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">STADIUM</p>
               <div className="border-t border-black/10 pt-6 space-y-4">
-                <p className="text-xl sm:text-2xl font-black">{detail.stadium.home_stadium_name}</p>
+                <p className="text-xl sm:text-2xl font-black">{stadiumName}</p>
                 {lat && lng && (
                   <div className="rounded-lg overflow-hidden border border-black/10 bg-zinc-100">
                     <iframe
-                      title={`${detail.stadium.home_stadium_name} 地図`}
+                      title={`${stadiumName} 地図`}
                       src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
                       width="100%"
                       height="320"
@@ -351,13 +353,13 @@ export default async function ResultPage({ params, searchParams }) {
             </div>
           )}
 
-          {/* マスコット (手入力・複数可・名前のみ) */}
-          {extra.mascots?.length > 0 && (
+          {/* マスコット (admin手入力・複数可・名前のみ) */}
+          {clubMeta.mascots?.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.4s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">マスコット</p>
               <ul className="space-y-2">
-                {extra.mascots.map((m) => (
-                  <li key={m.name} className="text-sm font-bold leading-tight">{m.name}</li>
+                {clubMeta.mascots.map((name) => (
+                  <li key={name} className="text-sm font-bold leading-tight">{name}</li>
                 ))}
               </ul>
             </div>

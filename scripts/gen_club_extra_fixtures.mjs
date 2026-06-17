@@ -48,12 +48,6 @@ const MATCHES = [
   ['2026-09-02', 'nagasaki', 'gamba'],
 ]
 
-// 鹿島のマスコット（手入力）
-const KASHIMA_MASCOTS = [
-  { name: 'しかお', note: '鹿島神宮の神鹿モチーフ。一家のリーダー' },
-  { name: 'シカコ', note: 'しかおの妻' },
-]
-
 // fixtures
 const fixturesByClub = {}
 for (const id of Object.keys(STADIUM)) fixturesByClub[id] = []
@@ -88,7 +82,6 @@ for (const id of order) {
   body += `  ${key}: {\n`
   const rr = recentResults(id)
   if (rr.length) body += `    recentResults: [${recentToStr(rr)}],\n`
-  if (id === 'kashima') body += `    mascots: ${JSON.stringify(KASHIMA_MASCOTS).replace(/"([a-zA-Z]+)":/g, '$1:').replace(/"/g, "'")},\n`
   body += `    upcomingManual: [\n${fixturesToStr(fixturesByClub[id])}\n    ],\n`
   body += `  },\n`
 }
@@ -96,10 +89,9 @@ for (const id of order) {
 const file = `/**
  * クラブ別の手入力/取り込みデータ（結果ページの左カラム成績・次節、右カラムマスコット）。
  *
- *  recentResults : 2022〜2025 の最終順位（API-Football league 98/99, scripts/standings_2022_2025.json）。
- *                  2026/百年構想リーグは公式確定後に追加。
- *  mascots       : マスコット（名前のみ・複数可。手入力。鹿島のみ、順次追加）。
+ *  recentResults : 各クラブの直近順位（API-Football league 98/99, scripts/standings_recent.json）。
  *  upcomingManual: 2026/27 J1 第1〜5節（公式PDF 2026-06-16 + jleakstats DB の会場名）。
+ *  ※マスコット・説明文・観光地・OB選手・スタジアム名は admin/club-meta (DB) で管理。
  *                  DBに upcomingMatches があればそちらを優先表示。
  *
  *  生成: scripts/gen_club_extra_fixtures.mjs

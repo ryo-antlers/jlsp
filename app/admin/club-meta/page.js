@@ -24,18 +24,8 @@ async function loadData() {
   const clubsForUI = await Promise.all(
     sortJ1Geo(CLUBS).map(async (c) => {
       const meta = CLUB_META[c.id] ?? {}
-      const mascot = meta.mascot ?? null
       const o = overrides[c.id] ?? null
-      const [clubWiki, mascotWiki] = await Promise.all([
-        getWikiThumbnail(c.name).catch(() => null),
-        mascot
-          ? getWikiThumbnail(mascot.wikiTitle ?? mascot.name).catch(() => null)
-          : Promise.resolve(null),
-      ])
-      const staticAccess = meta.access ?? null
-      const staticAwayTravel = meta.awayTravel?.fromTokyo ?? null
-      const staticSightseeing = SIGHTSEEING_SPOTS[c.id] ?? null
-      const staticAlumni = NOTABLE_ALUMNI[c.id] ?? null
+      const clubWiki = await getWikiThumbnail(c.name).catch(() => null)
       return {
         id: c.id,
         name: c.name,
@@ -43,29 +33,17 @@ async function loadData() {
         prefecture: c.prefecture,
         color: c.color,
         staticDescriptionLong: meta.descriptionLong ?? '',
-        staticMascotName: mascot?.name ?? '',
-        staticMascotWikiTitle: mascot?.wikiTitle ?? '',
-        staticMascotDescription: mascot?.description ?? '',
-        staticAccess,           // { station, walkMinutes, note } | null
-        staticAwayTravel,       // { hours, yen, transport, note } | null
-        staticSightseeing,      // string[] | null
-        staticAlumni,           // string[] | null
+        staticSightseeing: SIGHTSEEING_SPOTS[c.id] ?? null,   // string[] | null
+        staticAlumni: NOTABLE_ALUMNI[c.id] ?? null,           // string[] | null
         overrideDescriptionLong: o?.description_long ?? '',
-        overrideMascotName: o?.mascot_name ?? '',
-        overrideMascotWikiTitle: o?.mascot_wiki_title ?? '',
-        overrideMascotDescription: o?.mascot_description ?? '',
-        overrideAccess: o?.access ?? null,
-        overrideAwayTravel: o?.away_travel ?? null,
+        overrideMascots: Array.isArray(o?.mascots) ? o.mascots : null,  // string[] | null
+        overrideStadium: o?.stadium ?? '',
         overrideSightseeing: Array.isArray(o?.sightseeing) ? o.sightseeing : null,
         overrideAlumni: Array.isArray(o?.notable_alumni) ? o.notable_alumni : null,
         overrideUpdatedAt: o?.updated_at ?? null,
         clubWikiTitle: clubWiki?.title ?? c.name,
         clubWikiPageUrl: clubWiki?.pageUrl ?? null,
         clubWikiExtract: clubWiki?.extract ?? null,
-        mascotWikiTitle: mascotWiki?.title ?? null,
-        mascotWikiPageUrl: mascotWiki?.pageUrl ?? null,
-        mascotWikiExtract: mascotWiki?.extract ?? null,
-        mascotWikiImage: mascotWiki?.image ?? null,
       }
     }),
   )
@@ -77,11 +55,8 @@ export default async function ClubMetaAdminPage() {
   const overriddenCount = clubs.filter(
     (c) =>
       c.overrideDescriptionLong ||
-      c.overrideMascotDescription ||
-      c.overrideMascotName ||
-      c.overrideMascotWikiTitle ||
-      c.overrideAccess ||
-      c.overrideAwayTravel ||
+      c.overrideMascots ||
+      c.overrideStadium ||
       c.overrideSightseeing ||
       c.overrideAlumni,
   ).length
