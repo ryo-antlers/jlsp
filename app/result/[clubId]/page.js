@@ -111,7 +111,15 @@ export default async function ResultPage({ params, searchParams }) {
   const lng = detail?.stadium?.home_stadium_lng
   // スタジアム名: admin override > jleakstats 同期名
   const stadiumName = clubMeta.stadium ?? detail?.stadium?.home_stadium_name
-  const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null
+  // 地図クエリ: スタジアム名を override した場合は名前で検索(移転・改称に追従)、
+  // override が無ければ同期座標を使用。
+  const stadiumOverridden = clubMeta.stadium != null && clubMeta.stadium !== ''
+  const mapQuery = stadiumOverridden
+    ? encodeURIComponent(stadiumName)
+    : lat != null && lng != null
+      ? `${lat},${lng}`
+      : null
+  const mapsUrl = mapQuery ? `https://www.google.com/maps?q=${mapQuery}` : null
   const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
   return (
@@ -211,11 +219,11 @@ export default async function ResultPage({ params, searchParams }) {
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">STADIUM</p>
               <div className="border-t border-black/10 pt-6 space-y-4">
                 <p className="text-xl sm:text-2xl font-black">{stadiumName}</p>
-                {lat && lng && (
+                {mapQuery && (
                   <div className="rounded-lg overflow-hidden border border-black/10 bg-zinc-100">
                     <iframe
                       title={`${stadiumName} 地図`}
-                      src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                      src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
                       width="100%"
                       height="320"
                       style={{ border: 0 }}
@@ -227,7 +235,7 @@ export default async function ResultPage({ params, searchParams }) {
                 {mapsUrl && (
                   <div className="flex flex-wrap gap-2.5">
                     <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=transit`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${mapQuery}&travelmode=transit`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white transition-opacity hover:opacity-85"
