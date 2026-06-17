@@ -3,18 +3,17 @@
 import { useState, useTransition } from 'react'
 
 /**
- * クラブ列を accordion で並べ、開いた行で description / マスコット情報を編集。
+ * クラブ列を accordion で並べ、開いた行で 5 項目を編集する admin。
+ *   1. クラブ説明文 (YOUR CLUB)
+ *   2. スタジアム名 (空欄で J-League 同期名を使用)
+ *   3. マスコット一覧 (1 行 1 体・名前のみ)
+ *   4. 観光スポット
+ *   5. 主なOB選手
  *
- * 各 textarea は 3 つのソースから初期化可能:
- *   1. STATIC: lib/jlsp/club-meta.js (AI 生成)
- *   2. WIKI  : Wikipedia の extract
- *   3. SAVED : DB の override (= ryo さんが過去に保存した値)
- *
- * 保存ボタンで POST /api/admin/club-meta → upsert
+ * 保存ボタンで POST /api/admin/club-meta → club_meta_overrides に upsert。
  */
 export default function ClubMetaClient({ clubs }) {
   const [openId, setOpenId] = useState(null)
-
   return (
     <div className="space-y-2">
       {clubs.map((c) => (
@@ -27,9 +26,10 @@ export default function ClubMetaClient({ clubs }) {
 function ClubRow({ club, open, onToggle }) {
   const hasOverride = !!(
     club.overrideDescriptionLong ||
-    club.overrideMascotName ||
-    club.overrideMascotWikiTitle ||
-    club.overrideMascotDescription
+    club.overrideStadium ||
+    (club.overrideMascots && club.overrideMascots.length) ||
+    (club.overrideSightseeing && club.overrideSightseeing.length) ||
+    (club.overrideAlumni && club.overrideAlumni.length)
   )
   return (
     <div className={`rounded-lg border ${hasOverride ? 'border-emerald-500/30' : 'border-zinc-800'} bg-zinc-900/50 overflow-hidden`}>
@@ -59,21 +59,8 @@ function ClubEditor({ club }) {
   const [descriptionLong, setDescriptionLong] = useState(
     club.overrideDescriptionLong || club.staticDescriptionLong,
   )
-  const [mascotName, setMascotName] = useState(
-    club.overrideMascotName || club.staticMascotName,
-  )
-  const [mascotWikiTitle, setMascotWikiTitle] = useState(
-    club.overrideMascotWikiTitle || club.staticMascotWikiTitle,
-  )
-  const [mascotDescription, setMascotDescription] = useState(
-    club.overrideMascotDescription || club.staticMascotDescription,
-  )
-  const [access, setAccess] = useState(
-    club.overrideAccess ?? club.staticAccess ?? { station: '', walkMinutes: '', note: '' },
-  )
-  const [awayTravel, setAwayTravel] = useState(
-    club.overrideAwayTravel ?? club.staticAwayTravel ?? { hours: '', yen: '', transport: '', note: '' },
-  )
+  const [stadium, setStadium] = useState(club.overrideStadium ?? '')
+  const [mascotsText, setMascotsText] = useState((club.overrideMascots ?? []).join('\n'))
   const [sightseeingText, setSightseeingText] = useState(
     (club.overrideSightseeing ?? club.staticSightseeing ?? []).join('\n'),
   )
@@ -86,25 +73,15 @@ function ClubEditor({ club }) {
 
   function loadStaticDesc() { setDescriptionLong(club.staticDescriptionLong) }
   function loadWikiDesc() { if (club.clubWikiExtract) setDescriptionLong(club.clubWikiExtract) }
-  function loadStaticMascotDesc() { setMascotDescription(club.staticMascotDescription) }
-  function loadWikiMascotDesc() { if (club.mascotWikiExtract) setMascotDescription(club.mascotWikiExtract) }
-  function loadStaticMascotName() { setMascotName(club.staticMascotName) }
-  function loadStaticMascotWikiTitle() { setMascotWikiTitle(club.staticMascotWikiTitle) }
-  function loadStaticAccess() {
-    setAccess(club.staticAccess ?? { station: '', walkMinutes: '', note: '' })
-  }
-  function loadStaticAwayTravel() {
-    setAwayTravel(club.staticAwayTravel ?? { hours: '', yen: '', transport: '', note: '' })
-  }
-  function loadStaticSightseeing() {
-    setSightseeingText((club.staticSightseeing ?? []).join('\n'))
-  }
-  function loadStaticAlumni() {
-    setAlumniText((club.staticAlumni ?? []).join('\n'))
+  function loadStaticSightseeing() { setSightseeingText((club.staticSightseeing ?? []).join('\n')) }
+  function loadStaticAlumni() { setAlumniText((club.staticAlumni ?? []).join('\n')) }
+
+  function linesToArr(text) {
+    return text.split('\n').map((s) => s.trim()).filter(Boolean)
   }
 
   function clearAll() {
-    if (!confirm('この行の override をクリアして静的デフォルトに戻しますか？')) return
+    if (!confirm('この行の override をすべてクリアして静的デフォルトに戻しますか？')) return
     startTransition(async () => {
       setSaved(false)
       setError(null)
@@ -112,17 +89,11 @@ function ClubEditor({ club }) {
         const res = await fetch('/api/admin/club-meta', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            club_id: club.id,
-            description_long: null,
-            mascot_name: null,
-            mascot_wiki_title: null,
-            mascot_description: null,
-          }),
+          body: JSON.stringify({ club_id: club.id }),
         })
         if (!res.ok) throw new Error(await res.text())
         setSaved(true)
-        location.reload() // override 行削除後の状態を再読込
+        location.reload()
       } catch (e) {
         setError(e.message ?? String(e))
       }
@@ -134,28 +105,10 @@ function ClubEditor({ club }) {
       setSaved(false)
       setError(null)
       try {
-        // 観光スポット: 改行区切り → 配列。空行は除外
-        const sightseeingArr = sightseeingText
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean)
-        const sightseeingSameAsStatic =
-          JSON.stringify(sightseeingArr) === JSON.stringify(club.staticSightseeing ?? [])
-
-        const alumniArr = alumniText
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean)
-        const alumniSameAsStatic =
-          JSON.stringify(alumniArr) === JSON.stringify(club.staticAlumni ?? [])
-
-        const accessObj = normalizeAccess(access)
-        const accessSameAsStatic =
-          JSON.stringify(accessObj) === JSON.stringify(club.staticAccess ?? null)
-
-        const awayObj = normalizeAwayTravel(awayTravel)
-        const awaySameAsStatic =
-          JSON.stringify(awayObj) === JSON.stringify(club.staticAwayTravel ?? null)
+        const mascotsArr = linesToArr(mascotsText)
+        const sightseeingArr = linesToArr(sightseeingText)
+        const alumniArr = linesToArr(alumniText)
+        const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b ?? [])
 
         const res = await fetch('/api/admin/club-meta', {
           method: 'POST',
@@ -164,27 +117,11 @@ function ClubEditor({ club }) {
             club_id: club.id,
             // 静的デフォルトと一致する値は null で保存 (= override クリア扱い)
             description_long:
-              descriptionLong && descriptionLong !== club.staticDescriptionLong
-                ? descriptionLong
-                : null,
-            mascot_name:
-              mascotName && mascotName !== club.staticMascotName ? mascotName : null,
-            mascot_wiki_title:
-              mascotWikiTitle && mascotWikiTitle !== club.staticMascotWikiTitle
-                ? mascotWikiTitle
-                : null,
-            mascot_description:
-              mascotDescription && mascotDescription !== club.staticMascotDescription
-                ? mascotDescription
-                : null,
-            access: !accessObj || accessSameAsStatic ? null : accessObj,
-            away_travel: !awayObj || awaySameAsStatic ? null : awayObj,
-            sightseeing:
-              sightseeingArr.length === 0 || sightseeingSameAsStatic
-                ? null
-                : sightseeingArr,
-            notable_alumni:
-              alumniArr.length === 0 || alumniSameAsStatic ? null : alumniArr,
+              descriptionLong && descriptionLong !== club.staticDescriptionLong ? descriptionLong : null,
+            mascots: mascotsArr.length ? mascotsArr : null,
+            stadium: stadium.trim() || null,
+            sightseeing: sightseeingArr.length && !eq(sightseeingArr, club.staticSightseeing) ? sightseeingArr : null,
+            notable_alumni: alumniArr.length && !eq(alumniArr, club.staticAlumni) ? alumniArr : null,
           }),
         })
         if (!res.ok) throw new Error(await res.text())
@@ -200,7 +137,7 @@ function ClubEditor({ club }) {
       {/* CLUB DESCRIPTION */}
       <section>
         <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mt-4 mb-2">
-          クラブ説明文 (descriptionLong)
+          クラブ説明文 (YOUR CLUB)
         </p>
         <SourcePanels
           static_={club.staticDescriptionLong}
@@ -219,180 +156,32 @@ function ClubEditor({ club }) {
         <CharCount text={descriptionLong} />
       </section>
 
-      {/* MASCOT */}
+      {/* STADIUM */}
       <section className="border-t border-zinc-800 pt-4">
-        <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mb-2">
-          マスコット
-        </p>
-        <div className="flex gap-4 items-start">
-          {club.mascotWikiImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={club.mascotWikiImage}
-              alt="mascot"
-              className="w-20 h-20 object-cover object-top rounded ring-1 ring-zinc-700"
-            />
-          )}
-          <div className="flex-1 space-y-3">
-            <div>
-              <label className="text-[10px] text-zinc-500 mb-1 block">名前</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={mascotName}
-                  onChange={(e) => setMascotName(e.target.value)}
-                  className="flex-1 rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-                />
-                <SmallBtn onClick={loadStaticMascotName}>静的 ←</SmallBtn>
-              </div>
-              {club.staticMascotName !== mascotName && (
-                <p className="text-[10px] text-zinc-500 mt-1">
-                  静的: <span className="text-zinc-400">{club.staticMascotName}</span>
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-[10px] text-zinc-500 mb-1 block">
-                Wiki タイトル (検索キー)
-              </label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={mascotWikiTitle}
-                  onChange={(e) => setMascotWikiTitle(e.target.value)}
-                  className="flex-1 rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm font-mono"
-                  placeholder="(空欄でマスコット名を検索キーに使用)"
-                />
-                <SmallBtn onClick={loadStaticMascotWikiTitle}>静的 ←</SmallBtn>
-              </div>
-              {club.mascotWikiTitle && (
-                <p className="text-[10px] text-zinc-500 mt-1">
-                  Wiki 検出: <span className="text-zinc-400">{club.mascotWikiTitle}</span>
-                  {club.mascotWikiPageUrl && (
-                    <>
-                      {' '}
-                      ·{' '}
-                      <a
-                        href={club.mascotWikiPageUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline hover:text-zinc-300"
-                      >
-                        記事
-                      </a>
-                    </>
-                  )}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mt-4 mb-2">
-          マスコット説明文
-        </p>
-        <SourcePanels
-          static_={club.staticMascotDescription}
-          wiki={club.mascotWikiExtract}
-          wikiTitle={club.mascotWikiTitle}
-          wikiPageUrl={club.mascotWikiPageUrl}
-          onApplyStatic={loadStaticMascotDesc}
-          onApplyWiki={loadWikiMascotDesc}
+        <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mb-2">スタジアム名</p>
+        <input
+          type="text"
+          value={stadium}
+          onChange={(e) => setStadium(e.target.value)}
+          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm"
+          placeholder="空欄で J-League 同期の名称を使用 (例: メルカリスタジアム)"
         />
-        <textarea
-          value={mascotDescription}
-          onChange={(e) => setMascotDescription(e.target.value)}
-          className="w-full mt-2 rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 leading-relaxed resize-y min-h-[80px]"
-        />
-        <CharCount text={mascotDescription} />
       </section>
 
-      {/* STADIUM / ACCESS */}
+      {/* MASCOTS */}
       <section className="border-t border-zinc-800 pt-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
-            スタジアム アクセス
-          </p>
-          <SmallBtn onClick={loadStaticAccess}>静的に戻す ←</SmallBtn>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="最寄駅">
-            <input
-              type="text"
-              value={access.station ?? ''}
-              onChange={(e) => setAccess({ ...access, station: e.target.value })}
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="鹿島サッカースタジアム駅"
-            />
-          </Field>
-          <Field label="徒歩 (分)">
-            <input
-              type="number"
-              value={access.walkMinutes ?? ''}
-              onChange={(e) =>
-                setAccess({ ...access, walkMinutes: e.target.value === '' ? '' : Number(e.target.value) })
-              }
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="7"
-            />
-          </Field>
-          <Field label="補足">
-            <input
-              type="text"
-              value={access.note ?? ''}
-              onChange={(e) => setAccess({ ...access, note: e.target.value })}
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="試合日のみ臨時開設駅"
-            />
-          </Field>
-        </div>
-
-        {/* AWAY TRAVEL */}
-        <div className="flex items-center justify-between mt-5 mb-2">
-          <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400">
-            東京駅からのアクセス目安 (AWAY TRAVEL)
-          </p>
-          <SmallBtn onClick={loadStaticAwayTravel}>静的に戻す ←</SmallBtn>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Field label="所要時間">
-            <input
-              type="text"
-              value={awayTravel.hours ?? ''}
-              onChange={(e) => setAwayTravel({ ...awayTravel, hours: e.target.value })}
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="約 2 時間"
-            />
-          </Field>
-          <Field label="料金 (¥)">
-            <input
-              type="number"
-              value={awayTravel.yen ?? ''}
-              onChange={(e) =>
-                setAwayTravel({ ...awayTravel, yen: e.target.value === '' ? '' : Number(e.target.value) })
-              }
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="5500"
-            />
-          </Field>
-          <Field label="交通手段" colSpan={2}>
-            <input
-              type="text"
-              value={awayTravel.transport ?? ''}
-              onChange={(e) => setAwayTravel({ ...awayTravel, transport: e.target.value })}
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="高速バス (東京駅八重洲口直通)"
-            />
-          </Field>
-          <Field label="補足" colSpan={4}>
-            <input
-              type="text"
-              value={awayTravel.note ?? ''}
-              onChange={(e) => setAwayTravel({ ...awayTravel, note: e.target.value })}
-              className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-sm"
-              placeholder="電車だと鹿島臨海鉄道経由で乗継複雑、バス推奨"
-            />
-          </Field>
-        </div>
+        <p className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 mb-2">
+          マスコット一覧 (1 行 1 体・名前のみ)
+        </p>
+        <textarea
+          value={mascotsText}
+          onChange={(e) => setMascotsText(e.target.value)}
+          className="w-full rounded bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 leading-relaxed resize-y min-h-[80px]"
+          placeholder={'しかお\nシカコ'}
+        />
+        <p className="text-[10px] text-zinc-500 mt-1">
+          現在 {linesToArr(mascotsText).length} 体
+        </p>
       </section>
 
       {/* SIGHTSEEING */}
@@ -413,8 +202,8 @@ function ClubEditor({ club }) {
           placeholder={'鹿島神宮\n息栖神社\n大洗磯前神社'}
         />
         <p className="text-[10px] text-zinc-500 mt-1">
-          現在 {sightseeingText.split('\n').filter((s) => s.trim()).length} 件
-          {sightseeingText.split('\n').filter((s) => s.trim()).length > 3 && (
+          現在 {linesToArr(sightseeingText).length} 件
+          {linesToArr(sightseeingText).length > 3 && (
             <span className="text-amber-500 ml-2">⚠ 4 件目以降は表示されません</span>
           )}
         </p>
@@ -435,7 +224,7 @@ function ClubEditor({ club }) {
           placeholder={'内田篤人\n大迫勇也\n柴崎岳'}
         />
         <p className="text-[10px] text-zinc-500 mt-1">
-          現在 {alumniText.split('\n').filter((s) => s.trim()).length} 名
+          現在 {linesToArr(alumniText).length} 名
         </p>
       </section>
 
@@ -471,13 +260,7 @@ function ClubEditor({ club }) {
 function SourcePanels({ static_, wiki, wikiTitle, wikiPageUrl, onApplyStatic, onApplyWiki }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <SourcePanel
-        label="STATIC (club-meta.js)"
-        text={static_}
-        onApply={onApplyStatic}
-        applyLabel="↓ 適用"
-        accent="zinc"
-      />
+      <SourcePanel label="STATIC (club-meta.js)" text={static_} onApply={onApplyStatic} applyLabel="↓ 適用" accent="zinc" />
       <SourcePanel
         label={`WIKI (${wikiTitle ?? '見つからず'})`}
         text={wiki}
@@ -497,10 +280,7 @@ function SourcePanel({ label, text, onApply, applyLabel, accent, linkUrl }) {
       <div className="flex items-center justify-between mb-1.5">
         <p className={`text-[10px] font-mono tracking-[0.15em] ${accentClass}`}>{label}</p>
         {onApply && (
-          <button
-            onClick={onApply}
-            className="text-[10px] font-mono text-emerald-400 hover:text-emerald-200"
-          >
+          <button onClick={onApply} className="text-[10px] font-mono text-emerald-400 hover:text-emerald-200">
             {applyLabel}
           </button>
         )}
@@ -509,12 +289,7 @@ function SourcePanel({ label, text, onApply, applyLabel, accent, linkUrl }) {
         {text || <span className="text-zinc-600 italic">(なし)</span>}
       </p>
       {linkUrl && (
-        <a
-          href={linkUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-block mt-1.5 text-[10px] text-sky-400 hover:underline"
-        >
+        <a href={linkUrl} target="_blank" rel="noreferrer" className="inline-block mt-1.5 text-[10px] text-sky-400 hover:underline">
           Wikipedia 記事を開く ↗
         </a>
       )}
@@ -524,9 +299,7 @@ function SourcePanel({ label, text, onApply, applyLabel, accent, linkUrl }) {
 
 function CharCount({ text }) {
   return (
-    <p className="text-[10px] text-zinc-500 mt-1 text-right tabular-nums">
-      {(text ?? '').length} 字
-    </p>
+    <p className="text-[10px] text-zinc-500 mt-1 text-right tabular-nums">{(text ?? '').length} 字</p>
   )
 }
 
@@ -540,36 +313,4 @@ function SmallBtn({ children, onClick }) {
       {children}
     </button>
   )
-}
-
-function Field({ label, children, colSpan = 1 }) {
-  return (
-    <div className={colSpan === 2 ? 'sm:col-span-2' : colSpan === 4 ? 'sm:col-span-4' : ''}>
-      <label className="text-[10px] text-zinc-500 mb-1 block">{label}</label>
-      {children}
-    </div>
-  )
-}
-
-// 全フィールド空なら null を返す (= override クリア扱い)
-function normalizeAccess(a) {
-  if (!a) return null
-  const station = (a.station ?? '').toString().trim()
-  const note = (a.note ?? '').toString().trim()
-  const walkRaw = a.walkMinutes
-  const walk =
-    walkRaw === '' || walkRaw == null || Number.isNaN(Number(walkRaw)) ? null : Number(walkRaw)
-  if (!station && !note && walk == null) return null
-  return { station: station || null, walkMinutes: walk, note: note || null }
-}
-function normalizeAwayTravel(a) {
-  if (!a) return null
-  const hours = (a.hours ?? '').toString().trim()
-  const transport = (a.transport ?? '').toString().trim()
-  const note = (a.note ?? '').toString().trim()
-  const yenRaw = a.yen
-  const yen =
-    yenRaw === '' || yenRaw == null || Number.isNaN(Number(yenRaw)) ? null : Number(yenRaw)
-  if (!hours && !transport && !note && yen == null) return null
-  return { hours: hours || null, yen, transport: transport || null, note: note || null }
 }

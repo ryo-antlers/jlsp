@@ -1,17 +1,41 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { loadResultData } from '@/lib/jlsp/result-page-data'
-import { TYPE_META } from '@/lib/jlsp/type-meta'
 // CLUB_META は loader 経由で DB override を反映済みのものを result-page-data から受け取る
 import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // 静的 fallback
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
-import { getWikiThumbnail, getWikiThumbnails } from '@/lib/jlsp/wiki-image'
+import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
+import { getClubExtra } from '@/lib/jlsp/club-extra'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
 export const dynamic = 'force-dynamic'
 
 function pct(s) { return Math.round(s * 100) }
+// クラブ名を「漢字地名 ｜ カタカナ/英字 愛称」の境界で2行に分割する。
+// 例: 鹿島アントラーズ→[鹿島, アントラーズ] / ガンバ大阪→[ガンバ, 大阪] / FC東京→[FC, 東京]
+function splitClubName(name) {
+  let m = name.match(/^([一-鿿々ヶ]+)([゠-ヿA-Za-z].*)$/)
+  if (m) return [m[1], m[2]]
+  m = name.match(/^([゠-ヿ・A-Za-z.]+)([一-鿿々ヶ].*)$/)
+  if (m) return [m[1], m[2]]
+  return [name]
+}
+// 国名(日本語) → flagcdn の国コード。海外組の国旗画像用。
+const COUNTRY_FLAG = {
+  'ドイツ': 'de', 'オランダ': 'nl', 'スイス': 'ch', 'ベルギー': 'be', 'フランス': 'fr',
+  'スペイン': 'es', 'イタリア': 'it', 'ポルトガル': 'pt', 'オーストリア': 'at',
+  'クロアチア': 'hr', 'デンマーク': 'dk', 'ノルウェー': 'no', 'スウェーデン': 'se',
+  'ポーランド': 'pl', 'トルコ': 'tr', 'ギリシャ': 'gr', 'チェコ': 'cz', 'ハンガリー': 'hu',
+  'イングランド': 'gb-eng', 'スコットランド': 'gb-sct', 'ウェールズ': 'gb-wls',
+  'アメリカ': 'us', 'アメリカ合衆国': 'us', 'メキシコ': 'mx', 'ブラジル': 'br',
+  'オーストラリア': 'au', 'タイ': 'th', '韓国': 'kr', '大韓民国': 'kr',
+  'カタール': 'qa', 'サウジアラビア': 'sa', 'アラブ首長国連邦': 'ae', 'UAE': 'ae',
+}
+function flagUrl(country) {
+  const c = COUNTRY_FLAG[country]
+  return c ? `https://cdn.jsdelivr.net/gh/HatScripts/circle-flags/flags/${c}.svg` : null
+}
 const JP_DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtMatchDate(d) {
   const x = new Date(d)
@@ -32,111 +56,14 @@ function parseSightseeing(s) {
 function displayTitle(t) {
   return (t || '').replace(/\s*[（(][^）)]*[）)]\s*/g, '').trim()
 }
-/**
- * Parallel Coordinates: 4 軸を縦に並べた折れ線。S-curve でなめらかに繋ぐ。
- */
-function ParallelPlot({ userVector, clubVector, clubColor, animDelay = 0.4 }) {
-  const AXES_DEF = [
-    { id: 'shoubu',  posLetter: 'R', negLetter: 'E', label: '勝負', negLabel: '美学' },
-    { id: 'keiei',   posLetter: 'W', negLetter: 'H', label: '経営', negLabel: '育成' },
-    { id: 'kansen',  posLetter: 'U', negLetter: 'A', label: '観戦', negLabel: '分析' },
-    { id: 'kanshin', posLetter: 'O', negLetter: 'F', label: '関心', negLabel: 'カルチャー' },
-  ]
-  const clamp = (v) => Math.max(-1, Math.min(1, v))
-  const VB_W = 200, VB_H = 116
-  const xs = [25, 75, 125, 175]
-  const yTop = 24, yBottom = 86
-  const yCenter = (yTop + yBottom) / 2
-  const halfH = (yBottom - yTop) / 2
-
-  const userYs = AXES_DEF.map((a) => yCenter - clamp(userVector[a.id] / 18) * halfH)
-  const clubYs = AXES_DEF.map((a) => yCenter - clamp(clubVector[a.id] / 2) * halfH)
-
-  function smoothPath(ys) {
-    let d = `M ${xs[0]} ${ys[0]}`
-    for (let i = 1; i < xs.length; i++) {
-      const midX = (xs[i - 1] + xs[i]) / 2
-      d += ` C ${midX},${ys[i - 1]} ${midX},${ys[i]} ${xs[i]},${ys[i]}`
-    }
-    return d
-  }
-
-  return (
-    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full h-auto block">
-      <line
-        x1={xs[0] - 4} y1={yCenter} x2={xs[xs.length - 1] + 4} y2={yCenter}
-        stroke="#0e0e10" strokeOpacity="0.08" strokeWidth="0.3" strokeDasharray="0.6 1.4"
-      />
-      {xs.map((x, i) => (
-        <g key={i}>
-          <line x1={x} y1={yTop} x2={x} y2={yBottom} stroke="#0e0e10" strokeOpacity="0.22" strokeWidth="0.3" />
-          {[0.25, 0.5, 0.75].map((t) => (
-            <g key={t}>
-              <line x1={x - 1} y1={yCenter - halfH * t} x2={x + 1} y2={yCenter - halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
-              <line x1={x - 1} y1={yCenter + halfH * t} x2={x + 1} y2={yCenter + halfH * t} stroke="#0e0e10" strokeOpacity="0.14" strokeWidth="0.22" />
-            </g>
-          ))}
-          <text x={x} y={yTop - 10} fontSize="3.8" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.18em">{AXES_DEF[i].label}</text>
-          <text x={x} y={yTop - 2.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.92" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].posLetter}</text>
-          <text x={x} y={yBottom + 7.5} fontSize="6.5" textAnchor="middle" fontWeight="900" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace">{AXES_DEF[i].negLetter}</text>
-          <text x={x} y={yBottom + 14.5} fontSize="3.6" textAnchor="middle" fill="#0e0e10" fillOpacity="0.4" fontFamily="var(--font-geist-mono), monospace" letterSpacing="0.12em">{AXES_DEF[i].negLabel}</text>
-        </g>
-      ))}
-
-      <path
-        d={smoothPath(clubYs)}
-        fill="none"
-        stroke={clubColor}
-        strokeWidth="0.85"
-        strokeOpacity="0.95"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="dsRB-pc-line"
-        style={{ '--delay': `${animDelay + 0.1}s` }}
-      />
-      {clubYs.map((y, i) => (
-        <circle
-          key={`c${i}`}
-          cx={xs[i]} cy={y} r="1.5"
-          fill={clubColor} stroke="#fafaf7" strokeWidth="0.45"
-          className="dsRB-pc-dot"
-          style={{ '--delay': `${animDelay + 0.4 + i * 0.05}s` }}
-        />
-      ))}
-
-      <path
-        d={smoothPath(userYs)}
-        fill="none"
-        stroke="#0e0e10"
-        strokeWidth="0.85"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="dsRB-pc-line"
-        style={{ '--delay': `${animDelay + 0.35}s` }}
-      />
-      {userYs.map((y, i) => (
-        <circle
-          key={`u${i}`}
-          cx={xs[i]} cy={y} r="1.3"
-          fill="#0e0e10" stroke="#fafaf7" strokeWidth="0.45"
-          className="dsRB-pc-dot"
-          style={{ '--delay': `${animDelay + 0.65 + i * 0.05}s` }}
-        />
-      ))}
-    </svg>
-  )
-}
-
 export async function generateMetadata({ params, searchParams }) {
   const { clubId } = await params
   const sp = (await searchParams) ?? {}
   const a = typeof sp.a === 'string' ? sp.a : null
   const data = await loadResultData({ clubId, a })
   if (!data) return { title: '結果が見つかりません — JLSP' }
-  const { top1, userType } = data
-  const title = userType
-    ? `${userType.code} ${userType.nickname} × ${top1.club.name} — JLSP`
-    : `あなたの推しクラブは「${top1.club.name}」 — JLSP`
+  const { top1 } = data
+  const title = `あなたの推しクラブは「${top1.club.name}」 — JLSP`
   return {
     title,
     description: top1.club.description,
@@ -160,11 +87,11 @@ export default async function ResultPage({ params, searchParams }) {
   const a = typeof sp.a === 'string' ? sp.a : null
   const data = await loadResultData({ clubId, a })
   if (!data) notFound()
-  const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, userType, userTypeCode, userVector, teamId } = data
+  const { top1, top3, worst3, detail, overseasPlayers, overseasDataAvailable, teamId } = data
   const clubColor = top1.club.color
   const clubMeta = data.clubMeta ?? {}
   const alumni = clubMeta.notableAlumni ?? NOTABLE_ALUMNI[top1.club.id] ?? []
-  const alumniStats = data.alumniStats ?? {}
+  const extra = getClubExtra(top1.club.id)
   // DB に海外組データがあれば DB を信頼 (per-club 空 = 真に海外組ゼロ)。
   // DB 全体が空 (= migration 未適用 / 初回 sync 待ち) のときだけ静的 fallback。
   const overseas = overseasDataAvailable
@@ -175,17 +102,15 @@ export default async function ResultPage({ params, searchParams }) {
   const sightseeing = (
     clubMeta.sightseeingSpots ?? parseSightseeing(top1.club.sightseeing) ?? []
   ).slice(0, 3)
-  // Wikipedia (ja) からサムネ画像を並列取得。失敗したものは image:null で返るので
-  // テキストカードに自動 fallback できる。マスコット画像も同時取得。
-  const mascotWikiTitle =
-    clubMeta.mascot?.wikiTitle ?? clubMeta.mascot?.name ?? null
-  const [sightseeingCards, mascotInfo] = await Promise.all([
-    getWikiThumbnails(sightseeing),
-    mascotWikiTitle ? getWikiThumbnail(mascotWikiTitle) : Promise.resolve(null),
-  ])
+  // Wikipedia (ja) から観光地サムネを取得。失敗したものは image:null で返るので
+  // テキストカードに自動 fallback できる。観光地・建物は被写体に保護IPが無いので商用可。
+  // マスコットはクラブのキャラ著作権/商標のため画像は出さず名前のみ表示。
+  const sightseeingCards = await getWikiThumbnails(sightseeing)
   const description = clubMeta.descriptionLong ?? top1.club.description
   const lat = detail?.stadium?.home_stadium_lat
   const lng = detail?.stadium?.home_stadium_lng
+  // スタジアム名: admin override > jleakstats 同期名
+  const stadiumName = clubMeta.stadium ?? detail?.stadium?.home_stadium_name
   const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null
   const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
@@ -198,7 +123,7 @@ export default async function ResultPage({ params, searchParams }) {
             JLSP
           </Link>
           <span className="text-[10px] sm:text-xs font-mono tracking-[0.18em] text-zinc-500">
-            ISSUE · #{userTypeCode ?? '----'} <span className="opacity-50 mx-2">/</span> {top1.club.name}
+            {pct(top1.score)}% MATCH <span className="opacity-50 mx-2">/</span> {top1.club.name}
           </span>
         </div>
       </div>
@@ -206,50 +131,48 @@ export default async function ResultPage({ params, searchParams }) {
       {/* クラブカラー巨大帯 */}
       <div className="dsRB-color-band" style={{ backgroundColor: clubColor }} />
 
-      {/* MOBILE TYPE STRIP */}
-      <div className="lg:hidden border-b border-black/10 bg-white">
-        <div className="px-5 py-5">
-          <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-2">YOUR FANTYPE</p>
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-5xl font-black tracking-[0.04em]" style={{ color: clubColor }}>
-              {userTypeCode ?? '----'}
-            </span>
-            <span className="text-2xl font-bold">{userType?.nickname ?? ''}</span>
-          </div>
-          {userType?.tagline && (
-            <p className="mt-2 text-sm font-bold italic">{userType.tagline}</p>
-          )}
-        </div>
-      </div>
-
       {/* 3 COLUMN MAIN */}
       <div className="max-w-7xl mx-auto px-5 sm:px-10 py-8 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-x-10 gap-y-12 lg:gap-y-14">
 
-        {/* LEFT COLUMN */}
+        {/* LEFT COLUMN — 相性 / 公式 / 成績 / 次節 */}
         <aside className="hidden lg:block lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 order-2 lg:order-1">
-          <div className="dsRB-fade" style={{ '--d': '0s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">TYPE</p>
-            <div className="border-t-2 pt-4" style={{ borderColor: clubColor }}>
-              <p className="text-5xl xl:text-6xl font-black tracking-[0.04em] leading-none" style={{ color: clubColor }}>
-                {userTypeCode ?? '----'}
-              </p>
-              <p className="text-xl xl:text-2xl font-bold mt-2 leading-tight">{userType?.nickname ?? ''}</p>
-            </div>
-          </div>
-          {userType && (
-            <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
-              <p className="text-sm font-bold leading-snug mb-3 italic">{userType.tagline}</p>
-              <p className="text-xs text-zinc-600 leading-relaxed">{userType.description}</p>
+          {/* 公式リンク */}
+          {hasOfficial && (
+            <div className="dsRB-fade space-y-2" style={{ '--d': '0.12s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">OFFICIAL</p>
+              {clubMeta.official.hp && <OfficialRow href={clubMeta.official.hp} label="公式 HP" clubColor={clubColor} />}
+              {clubMeta.official.x && <OfficialRow href={clubMeta.official.x} label="X (Twitter)" clubColor={clubColor} />}
+              {clubMeta.official.instagram && <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />}
             </div>
           )}
-          <div className="dsRB-fade space-y-4" style={{ '--d': '0.2s' }}>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">TYPE MAP</p>
-            <ParallelPlot userVector={userVector} clubVector={top1.club.vector} clubColor={clubColor} animDelay={0.35} />
-            <div className="flex gap-3 text-[10px] font-mono text-zinc-500 pt-1">
-              <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px bg-[#0e0e10]" />you</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-px" style={{ backgroundColor: clubColor }} />{top1.club.name}</span>
+          {/* 直近の成績 (タイムライン・中空リング) */}
+          {extra.recentResults?.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.2s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">RECENT</p>
+              <ol className="relative pl-[18px]">
+                <span className="absolute left-1 top-1.5 bottom-1.5 w-px bg-black/10" aria-hidden />
+                {extra.recentResults.map((r) => (
+                  <li key={`${r.year}-${r.comp}`} className="relative pb-[18px] last:pb-0">
+                    <span
+                      className="absolute -left-[18px] top-0.5 w-[9px] h-[9px] rounded-full box-border"
+                      style={{ backgroundColor: '#fafaf7', border: `2px solid ${clubColor}` }}
+                      aria-hidden
+                    />
+                    <p className="text-[11px] font-mono text-zinc-900 tabular-nums leading-none tracking-wide">{r.year}/{r.comp}</p>
+                    <p className="text-[15px] font-bold text-zinc-900 mt-1 leading-none">{r.place}</p>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
+          )}
+          {/* 開幕の予定 (DB優先・無ければ手入力) */}
+          <NextMatches
+            dbMatches={detail?.upcomingMatches}
+            manual={extra.upcomingManual}
+            teamId={teamId}
+            clubColor={clubColor}
+            ticketUrl={clubMeta.ticketUrl}
+          />
         </aside>
 
         {/* CENTER COLUMN */}
@@ -258,8 +181,10 @@ export default async function ResultPage({ params, searchParams }) {
           <section className="dsRB-fade" style={{ '--d': '0.05s' }}>
             <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">YOUR CLUB</p>
             <div className="h-1 w-16 mb-5" style={{ backgroundColor: clubColor }} />
-            <h1 className="text-4xl sm:text-7xl font-black leading-[0.95] tracking-[-0.03em] mb-6 sm:mb-8">
-              {top1.club.name}
+            <h1 className="text-4xl sm:text-6xl font-black leading-[1.04] tracking-[-0.03em] mb-6 sm:mb-8">
+              {splitClubName(top1.club.name).map((ln, i) => (
+                <span key={i} className="block">{ln}</span>
+              ))}
             </h1>
             <div className="flex items-baseline gap-3 mb-5 flex-wrap">
               <span className="dsRB-bignum text-6xl sm:text-[7rem] font-black tabular-nums leading-none" style={{ color: clubColor }}>
@@ -281,15 +206,15 @@ export default async function ResultPage({ params, searchParams }) {
           </section>
 
           {/* STADIUM */}
-          {detail?.stadium?.home_stadium_name && (
+          {stadiumName && (
             <section className="dsRB-fade" style={{ '--d': '0.2s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">STADIUM</p>
               <div className="border-t border-black/10 pt-6 space-y-4">
-                <p className="text-xl sm:text-2xl font-black">{detail.stadium.home_stadium_name}</p>
+                <p className="text-xl sm:text-2xl font-black">{stadiumName}</p>
                 {lat && lng && (
                   <div className="rounded-lg overflow-hidden border border-black/10 bg-zinc-100">
                     <iframe
-                      title={`${detail.stadium.home_stadium_name} 地図`}
+                      title={`${stadiumName} 地図`}
                       src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
                       width="100%"
                       height="320"
@@ -324,51 +249,6 @@ export default async function ResultPage({ params, searchParams }) {
             </section>
           )}
 
-          {/* MASCOT */}
-          {clubMeta.mascot && (
-            <section className="dsRB-fade" style={{ '--d': '0.24s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-4">MASCOT</p>
-              <div className="border-t border-black/10 pt-6">
-                <div className="flex gap-4 sm:gap-5 items-start">
-                  {mascotInfo?.image ? (
-                    <a
-                      href={mascotInfo.pageUrl ?? `https://ja.wikipedia.org/wiki/${encodeURIComponent(mascotWikiTitle)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0 block w-28 sm:w-36 rounded-lg overflow-hidden bg-zinc-100 ring-1 ring-black/5 hover:ring-black/30 transition"
-                      title="Wikipedia で見る"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={mascotInfo.image}
-                        alt={clubMeta.mascot.name}
-                        loading="lazy"
-                        className="w-full aspect-square object-cover object-top"
-                      />
-                    </a>
-                  ) : (
-                    <div
-                      className="shrink-0 w-28 sm:w-36 aspect-square rounded-lg flex items-center justify-center"
-                      style={{ background: `linear-gradient(135deg, ${clubColor}22, ${clubColor}55)` }}
-                    >
-                      <span className="text-3xl font-black text-white/80 select-none">
-                        {clubMeta.mascot.name.slice(0, 1)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xl sm:text-2xl font-black leading-tight" style={{ color: clubColor }}>
-                      {clubMeta.mascot.name}
-                    </p>
-                    {mascotInfo?.image && (
-                      <p className="text-[10px] text-zinc-400 mt-3">画像: Wikipedia (CC BY-SA)</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
           {/* EXPLORE */}
           {sightseeingCards.length > 0 && (
             <section className="dsRB-fade" style={{ '--d': '0.28s' }}>
@@ -377,7 +257,7 @@ export default async function ResultPage({ params, searchParams }) {
                 {detail?.stadium?.home_stadium_name ?? top1.club.prefecture} 観戦のついでに。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {sightseeingCards.map(({ title, image, extract }) => {
+                {sightseeingCards.map(({ title, image }) => {
                   const shown = displayTitle(title)
                   return (
                     <a
@@ -385,7 +265,7 @@ export default async function ResultPage({ params, searchParams }) {
                       href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(shown)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex flex-col overflow-hidden border border-black/10 hover:border-black rounded-lg bg-white transition-colors"
+                      className="group relative block aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100"
                     >
                       {image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -393,33 +273,26 @@ export default async function ResultPage({ params, searchParams }) {
                           src={image}
                           alt={shown}
                           loading="lazy"
-                          className="w-full aspect-[4/3] object-cover bg-zinc-100 group-hover:scale-[1.03] transition-transform duration-300"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500"
                         />
                       ) : (
                         <div
-                          className="w-full aspect-[4/3] flex items-center justify-center"
-                          style={{
-                            background: `linear-gradient(135deg, ${clubColor}22, ${clubColor}55)`,
-                          }}
-                        >
-                          <span className="text-2xl font-black text-white/70 select-none">
-                            {shown.slice(0, 2)}
-                          </span>
-                        </div>
+                          className="absolute inset-0"
+                          style={{ background: `linear-gradient(135deg, ${clubColor}55, ${clubColor}aa)` }}
+                        />
                       )}
-                      <div className="px-3 sm:px-4 py-2.5 sm:py-3 flex-1">
-                        <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-1">
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0) 55%)' }}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 text-white">
+                        <p className="text-[9px] font-mono tracking-[0.15em] opacity-85 mb-1">
                           {top1.club.prefecture}
                         </p>
-                        <p className="text-xs sm:text-sm font-bold leading-snug flex items-center justify-between gap-1.5">
+                        <p className="text-sm sm:text-base font-bold leading-tight flex items-end justify-between gap-1.5">
                           <span className="line-clamp-2">{shown}</span>
-                          <span className="text-zinc-400 group-hover:translate-x-1 transition-transform shrink-0">→</span>
+                          <span className="opacity-80 group-hover:translate-x-0.5 transition-transform shrink-0">→</span>
                         </p>
-                        {extract && (
-                          <p className="hidden sm:block text-[11px] text-zinc-500 mt-1.5 leading-snug line-clamp-2">
-                            {extract}
-                          </p>
-                        )}
                       </div>
                     </a>
                   )
@@ -440,57 +313,16 @@ export default async function ResultPage({ params, searchParams }) {
           )}
         </main>
 
-        {/* RIGHT COLUMN — DATA STACK */}
+        {/* RIGHT COLUMN — 人 (OB / 海外組 / マスコット) */}
         <aside className="lg:col-span-3 lg:sticky lg:top-10 self-start space-y-8 sm:space-y-10 order-3">
-          {/* STANDINGS */}
-          {detail?.standings && <StandingsCard standings={detail.standings} clubColor={clubColor} />}
-
-          {/* OFFICIAL (HP / X / Instagram を縦積み) */}
-          {hasOfficial && (
-            <div className="dsRB-fade border-t border-black/10 pt-5 space-y-2" style={{ '--d': '0.18s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">OFFICIAL</p>
-              {clubMeta.official.hp && (
-                <OfficialRow href={clubMeta.official.hp} label="公式 HP" clubColor={clubColor} />
-              )}
-              {clubMeta.official.x && (
-                <OfficialRow href={clubMeta.official.x} label="X (Twitter)" clubColor={clubColor} />
-              )}
-              {clubMeta.official.instagram && (
-                <OfficialRow href={clubMeta.official.instagram} label="Instagram" clubColor={clubColor} />
-              )}
-            </div>
-          )}
-
-          {/* NEXT MATCH */}
-          {detail?.upcomingMatches?.length > 0 && (
-            <UpcomingCard
-              matches={detail.upcomingMatches.slice(0, 3)}
-              teamId={teamId}
-              clubColor={clubColor}
-              ticketUrl={clubMeta.ticketUrl}
-            />
-          )}
-
-          {/* 主なOB選手 */}
+          {/* 主なOB選手 (スタッツ無し) */}
           {alumni.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.3s' }}>
               <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">主なOB選手</p>
-              <ul className="space-y-2.5">
-                {alumni.map((name) => {
-                  const stats = alumniStats[name]
-                  return (
-                    <li key={name} className="leading-tight">
-                      <p className="text-sm font-bold">{name}</p>
-                      {stats && (stats.apps > 0 || stats.goals > 0) && (
-                        <p className="text-[11px] font-mono text-zinc-500 mt-0.5 tabular-nums">
-                          {stats.apps} 試合
-                          <span className="opacity-60"> · </span>
-                          {stats.goals} ゴール
-                        </p>
-                      )}
-                    </li>
-                  )
-                })}
+              <ul className="space-y-2">
+                {alumni.map((name) => (
+                  <li key={name} className="text-sm font-bold leading-tight">{name}</li>
+                ))}
               </ul>
             </div>
           )}
@@ -502,14 +334,32 @@ export default async function ResultPage({ params, searchParams }) {
                 現在 海外でプレー中
               </p>
               <ul className="space-y-2.5">
-                {overseas.map((p) => (
-                  <li key={p.name} className="leading-tight">
-                    <p className="text-sm font-bold">{p.name}</p>
-                    <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
-                      {p.club}
-                      {p.country && <span className="opacity-60"> · {p.country}</span>}
-                    </p>
-                  </li>
+                {overseas.map((p) => {
+                  const flag = flagUrl(p.country)
+                  return (
+                    <li key={p.name} className="flex items-center gap-1.5 leading-tight whitespace-nowrap">
+                      <span className="text-sm font-bold shrink-0">{p.name}</span>
+                      <span className="text-[11px] font-mono text-zinc-500 truncate min-w-0">{p.club}</span>
+                      {flag ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={flag} alt={p.country} loading="lazy" className="w-4 h-4 shrink-0 rounded-full" />
+                      ) : (
+                        p.country && <span className="text-[10px] font-mono text-zinc-400 shrink-0">{p.country}</span>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+
+          {/* マスコット (admin手入力・複数可・名前のみ) */}
+          {clubMeta.mascots?.length > 0 && (
+            <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.4s' }}>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">マスコット</p>
+              <ul className="space-y-2">
+                {clubMeta.mascots.map((name) => (
+                  <li key={name} className="text-sm font-bold leading-tight">{name}</li>
                 ))}
               </ul>
             </div>
@@ -528,7 +378,7 @@ export default async function ResultPage({ params, searchParams }) {
                   <span className="font-mono text-xs text-zinc-500 w-4 tabular-nums">{i + 1}</span>
                   <span className="w-1 h-6 rounded-full" style={{ backgroundColor: m.club.color }} />
                   <span className="flex-1 text-base font-bold text-zinc-600 truncate">{m.club.name}</span>
-                  <span className="font-mono text-base font-black tabular-nums" style={{ color: clubColor }}>{pct(m.score)}%</span>
+                  <span className="font-mono text-base font-black tabular-nums" style={{ color: m.club.color }}>{pct(m.score)}%</span>
                 </li>
               ))}
             </ol>
@@ -545,42 +395,6 @@ export default async function ResultPage({ params, searchParams }) {
                 </li>
               ))}
             </ol>
-          </div>
-        </div>
-      </div>
-
-      {/* 16 TYPES (常時展開) */}
-      <div className="border-t border-black/10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10">
-          <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-6">ALL 16 TYPES</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {Object.values(TYPE_META).map((t) => {
-              const isMine = t.code === userTypeCode
-              return (
-                <div
-                  key={t.code}
-                  className={`px-3 py-2.5 rounded-lg border ${isMine ? '' : 'border-black/10 bg-white'}`}
-                  style={
-                    isMine
-                      ? { borderColor: clubColor, backgroundColor: `${clubColor}0d` }
-                      : undefined
-                  }
-                >
-                  <p
-                    className="text-base sm:text-lg font-black tracking-[0.06em] tabular-nums leading-none"
-                    style={{ color: isMine ? clubColor : '#0e0e10' }}
-                  >
-                    {t.code}
-                  </p>
-                  <p
-                    className="text-xs sm:text-sm font-bold mt-1 leading-tight"
-                    style={{ color: isMine ? clubColor : undefined }}
-                  >
-                    {t.nickname}
-                  </p>
-                </div>
-              )
-            })}
           </div>
         </div>
       </div>
@@ -616,9 +430,8 @@ export default async function ResultPage({ params, searchParams }) {
         <div className="max-w-7xl mx-auto px-5 sm:px-10 py-10 sm:py-12 flex flex-col gap-6 items-center sm:items-stretch">
           <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-6">
             <ShareButtons
-              typeCode={userTypeCode}
-              typeNickname={userType?.nickname}
               clubName={top1.club.name}
+              matchPct={pct(top1.score)}
             />
             <Link
               href="/quiz"
@@ -641,102 +454,34 @@ export default async function ResultPage({ params, searchParams }) {
  * 右カラム最上段の順位カード。
  * クラブカラーの帯と大きな順位、前節からの delta、得失点、直近5の勝敗を一枚にまとめる。
  */
-function StandingsCard({ standings, clubColor }) {
-  const delta =
-    standings.prev_rank != null && standings.rank != null
-      ? standings.prev_rank - standings.rank
-      : 0
-  const gd = (standings.goals_for ?? 0) - (standings.goals_against ?? 0)
-
+/** 開幕戦などの予定。DB の upcomingMatches を優先、無ければ手入力 manual を表示。 */
+function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
+  const hasDb = dbMatches?.length > 0
+  const hasManual = manual?.length > 0
+  if (!hasDb && !hasManual) return null
+  const cards = hasDb
+    ? dbMatches.slice(0, 5).map((m) => ({
+        key: m.id,
+        isHome: m.home_team_id === teamId,
+        t: fmtMatchDate(m.date),
+        opponent: m.home_team_id === teamId ? m.away_name : m.home_name,
+        venue: m.venue_name_ja,
+      }))
+    : manual.slice(0, 5).map((m, i) => ({
+        key: i,
+        isHome: m.home,
+        t: fmtMatchDate(m.date),
+        opponent: m.opponent,
+        venue: m.venue,
+      }))
   return (
-    <div className="dsRB-fade" style={{ '--d': '0.1s' }}>
-      <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">
-        STANDINGS
-        {standings.group_name && (
-          <span className="opacity-50 ml-2">{standings.group_name}</span>
-        )}
-      </p>
-      {/* 順位 + delta */}
-      <div
-        className="relative overflow-hidden rounded-lg px-4 pt-4 pb-3 text-white"
-        style={{ backgroundColor: clubColor }}
-      >
-        <div className="flex items-end justify-between">
-          <div className="leading-none">
-            <span className="dsRB-bignum text-[5.5rem] font-black tabular-nums">
-              {standings.rank}
-            </span>
-            <span className="text-2xl font-black opacity-80 ml-1">位</span>
-          </div>
-          {delta !== 0 && (
-            <div className="flex items-center gap-1 pb-3 pr-1">
-              <span className={`text-xl font-black ${delta > 0 ? 'text-white' : 'text-white/85'}`}>
-                {delta > 0 ? '▲' : '▼'}
-              </span>
-              <span className="text-xl font-black tabular-nums">{Math.abs(delta)}</span>
-            </div>
-          )}
-          {delta === 0 && standings.prev_rank != null && (
-            <span className="text-xs font-mono opacity-70 pb-3 pr-1">—</span>
-          )}
-        </div>
-        <p className="text-[10px] font-mono tracking-[0.18em] opacity-85 mt-1">
-          {standings.played}試合 · {standings.points}pt
-        </p>
-      </div>
-
-      {/* W-D-L grid */}
-      <div className="grid grid-cols-3 gap-px bg-black/5 mt-px rounded-b-lg overflow-hidden">
-        <StatCell label="勝" value={standings.win} color="#22c55e" />
-        <StatCell label="分" value={standings.draw} color="#71717a" />
-        <StatCell label="敗" value={standings.lose} color="#f97316" />
-      </div>
-
-      {/* Goals */}
-      <div className="flex items-baseline justify-between mt-4 text-xs">
-        <span className="font-mono text-[10px] text-zinc-500 tracking-[0.15em]">GOALS</span>
-        <span className="font-mono tabular-nums">
-          <span className="font-bold text-zinc-700">{standings.goals_for}</span>
-          <span className="text-zinc-400 mx-1">/</span>
-          <span className="text-zinc-500">{standings.goals_against}</span>
-          <span className={`ml-2 font-black ${gd > 0 ? 'text-emerald-600' : gd < 0 ? 'text-rose-600' : 'text-zinc-500'}`}>
-            {gd > 0 ? '+' : ''}{gd}
-          </span>
-        </span>
-      </div>
-
-    </div>
-  )
-}
-
-function StatCell({ label, value, color }) {
-  return (
-    <div className="bg-white flex items-baseline justify-center gap-1 py-2">
-      <span className="text-xl font-black tabular-nums" style={{ color }}>
-        {value ?? 0}
-      </span>
-      <span className="text-[10px] font-bold text-zinc-500">{label}</span>
-    </div>
-  )
-}
-
-/**
- * 次の対戦カード。全試合を MatchLine スタイルで条目表示。
- * 1 試合目だけ右端に「あと N 日」 countdown を表示してわずかに強調。
- */
-function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
-  if (!matches.length) return null
-  return (
-    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.2s' }}>
+    <div className="dsRB-fade border-t border-black/10 pt-5 space-y-3" style={{ '--d': '0.28s' }}>
       <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500">NEXT MATCH</p>
-      <div className="space-y-3">
-        {matches.map((m, i) => (
-          <MatchLine
-            key={m.id}
-            match={m}
-            teamId={teamId}
-            showVenue={i === 0}
-          />
+      <div>
+        {cards.map((c) => (
+          <div key={c.key} className="border-t border-black/5 pt-3 mt-3 first:border-t-0 first:pt-0 first:mt-0">
+            <MatchCard isHome={c.isHome} t={c.t} opponent={c.opponent} venue={c.venue} clubColor={clubColor} />
+          </div>
         ))}
       </div>
       {ticketUrl && (
@@ -753,50 +498,23 @@ function UpcomingCard({ matches, teamId, clubColor, ticketUrl }) {
   )
 }
 
-function MatchLine({ match, teamId, showVenue = false }) {
-  const isHome = match.home_team_id === teamId
-  const oppName = isHome ? match.away_name : match.home_name
-  const oppColor = isHome ? match.away_color : match.home_color
-  const t = fmtMatchDate(match.date)
+/** 次節 1試合 (対戦チップ型: HOME/AWAY をピルで表示)。 */
+function MatchCard({ isHome, t, opponent, venue, clubColor }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="text-right shrink-0 w-12">
-        <p className="text-xs font-bold tabular-nums leading-none">
-          {t.month}/{t.day}
-        </p>
-        <p className="text-[9px] font-mono text-zinc-500 mt-0.5">({t.dow})</p>
-      </div>
-      <span
-        className="block w-0.5 h-7 rounded-full shrink-0"
-        style={{ backgroundColor: oppColor ?? '#a1a1aa' }}
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-[9px] font-mono text-zinc-500 leading-none mb-0.5">
+    <div>
+      <div className="flex items-baseline gap-2 mb-1.5">
+        <span className="text-[13px] font-mono font-bold tabular-nums">{t.month}/{t.day}</span>
+        <span className="text-[10px] text-zinc-400">({t.dow})</span>
+        <span
+          className="ml-auto text-[9px] font-bold rounded-full px-2.5 py-0.5 tracking-wider"
+          style={isHome ? { color: '#fff', backgroundColor: clubColor } : { color: '#52525b', backgroundColor: '#e4e4e0' }}
+        >
           {isHome ? 'HOME' : 'AWAY'}
-          {showVenue && match.venue_name_ja && (
-            <span className="opacity-70"> · {match.venue_name_ja}</span>
-          )}
-        </p>
-        <p className="text-xs font-bold truncate leading-tight">vs {oppName}</p>
+        </span>
       </div>
+      <p className="text-[15px] font-bold leading-tight truncate">vs {opponent}</p>
+      {venue && <p className="text-[10px] text-zinc-500 mt-0.5 truncate">{venue}</p>}
     </div>
-  )
-}
-
-function OfficialLink({ href, label }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block border border-black/10 hover:border-black px-3 py-2.5 rounded-lg bg-white transition-colors group"
-    >
-      <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-0.5">LINK</p>
-      <p className="text-xs sm:text-sm font-bold flex items-center justify-between">
-        <span>{label}</span>
-        <span className="text-zinc-400 group-hover:translate-x-1 transition-transform">↗</span>
-      </p>
-    </a>
   )
 }
 

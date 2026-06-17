@@ -1,7 +1,7 @@
 import sql from '@/lib/db'
 import { CLUBS, RAW_CLUBS, sortJ1Geo } from '@/lib/jlsp/clubs'
-import { QUESTIONS } from '@/lib/jlsp/questions'
-import { AXES, AXIS_BY_ID } from '@/lib/jlsp/axes'
+import { QUESTIONS, QUESTION_CATEGORIES, CATEGORY_BY_ID } from '@/lib/jlsp/questions'
+import { AXIS_BY_ID } from '@/lib/jlsp/axes'
 import QuestionOverridesClient from './client'
 
 export const dynamic = 'force-dynamic'
@@ -43,24 +43,29 @@ export default async function QuestionOverridesPage() {
 
   // 質問リスト + 各質問のメタ
   const questions = QUESTIONS.map((q) => {
-    const axis = AXIS_BY_ID[q.axis]
+    const cat = CATEGORY_BY_ID[q.category]
+    const axis = q.legacyAxis ? AXIS_BY_ID[q.legacyAxis] : null
     return {
       id: q.id,
       text: q.statement ?? q.text ?? '',  // questions.js は statement フィールド
-      axis: q.axis,
-      axisLabel: axis?.label,
-      positiveLabel: axis?.positive,
-      negativeLabel: axis?.negative,
-      direction: q.direction,
+      category: q.category,
+      categoryLabel: cat?.label ?? q.category,
+      // legacy 軸を持つ質問のみ +/- の極ラベルを表示
+      legacyAxis: q.legacyAxis ?? null,
+      positiveLabel: axis?.positive ?? null,
+      negativeLabel: axis?.negative ?? null,
+      direction: q.direction ?? null,
     }
   })
 
-  // base 期待値 (vector × direction) を事前計算してクライアントへ
+  // base 期待値を事前計算してクライアントへ
+  // legacy 軸あり → vector × direction、無し（新質問）→ 0
   // 形: { [club_id|question_id]: baseExpected }
   const baseExpectations = {}
   for (const c of clubs) {
-    for (const q of questions) {
-      baseExpectations[`${c.id}|${q.id}`] = clamp((c.vector[q.axis] ?? 0) * q.direction)
+    for (const q of QUESTIONS) {
+      const base = q.legacyAxis ? (c.vector[q.legacyAxis] ?? 0) * q.direction : 0
+      baseExpectations[`${c.id}|${q.id}`] = clamp(base)
     }
   }
 
@@ -84,7 +89,7 @@ export default async function QuestionOverridesPage() {
         <QuestionOverridesClient
           questions={questions}
           clubs={clubs}
-          axes={AXES}
+          categories={QUESTION_CATEGORIES}
           overrides={overrides}
           baseExpectations={baseExpectations}
         />

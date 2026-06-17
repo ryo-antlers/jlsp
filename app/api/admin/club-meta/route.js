@@ -27,11 +27,8 @@ export async function POST(req) {
   const { club_id } = body
   const fields = {
     description_long: nonEmpty(body.description_long),
-    mascot_name: nonEmpty(body.mascot_name),
-    mascot_wiki_title: nonEmpty(body.mascot_wiki_title),
-    mascot_description: nonEmpty(body.mascot_description),
-    access: nonEmptyObject(body.access),
-    away_travel: nonEmptyObject(body.away_travel),
+    mascots: nonEmptyArray(body.mascots),
+    stadium: nonEmpty(body.stadium),
     sightseeing: nonEmptyArray(body.sightseeing),
     notable_alumni: nonEmptyArray(body.notable_alumni),
   }
@@ -54,14 +51,6 @@ function nonEmpty(v) {
   if (typeof v !== 'string') return null
   const t = v.trim()
   return t.length > 0 ? t : null
-}
-function nonEmptyObject(v) {
-  if (!v || typeof v !== 'object' || Array.isArray(v)) return null
-  const keys = Object.keys(v)
-  if (keys.length === 0) return null
-  // 全 value が null/undefined/空文字なら null 扱い
-  const hasValue = keys.some((k) => v[k] !== null && v[k] !== undefined && v[k] !== '')
-  return hasValue ? v : null
 }
 function nonEmptyArray(v) {
   if (!Array.isArray(v) || v.length === 0) return null
