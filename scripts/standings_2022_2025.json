@@ -1,0 +1,362 @@
+{
+ "kashima": {
+  "2022": {
+   "league": "J1",
+   "rank": 4
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 5
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 5
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 1
+  }
+ },
+ "urawa": {
+  "2022": {
+   "league": "J1",
+   "rank": 9
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 4
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 13
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 7
+  }
+ },
+ "kawasaki": {
+  "2022": {
+   "league": "J1",
+   "rank": 2
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 8
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 8
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 8
+  }
+ },
+ "f-marinos": {
+  "2022": {
+   "league": "J1",
+   "rank": 1
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 2
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 9
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 15
+  }
+ },
+ "fctokyo": {
+  "2022": {
+   "league": "J1",
+   "rank": 6
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 11
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 7
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 11
+  }
+ },
+ "verdy": {
+  "2022": {
+   "league": "J2",
+   "rank": 9
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 3
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 6
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 17
+  }
+ },
+ "reysol": {
+  "2022": {
+   "league": "J1",
+   "rank": 7
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 17
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 17
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 2
+  }
+ },
+ "grampus": {
+  "2022": {
+   "league": "J1",
+   "rank": 8
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 6
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 11
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 16
+  }
+ },
+ "gamba": {
+  "2022": {
+   "league": "J1",
+   "rank": 15
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 16
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 4
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 9
+  }
+ },
+ "cerezo": {
+  "2022": {
+   "league": "J1",
+   "rank": 5
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 9
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 10
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 10
+  }
+ },
+ "kobe": {
+  "2022": {
+   "league": "J1",
+   "rank": 13
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 1
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 1
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 5
+  }
+ },
+ "sanfrecce": {
+  "2022": {
+   "league": "J1",
+   "rank": 3
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 3
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 2
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 4
+  }
+ },
+ "avispa": {
+  "2022": {
+   "league": "J1",
+   "rank": 14
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 7
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 12
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 12
+  }
+ },
+ "kyoto": {
+  "2022": {
+   "league": "J1",
+   "rank": 16
+  },
+  "2023": {
+   "league": "J1",
+   "rank": 13
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 14
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 3
+  }
+ },
+ "machida": {
+  "2022": {
+   "league": "J2",
+   "rank": 15
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 1
+  },
+  "2024": {
+   "league": "J1",
+   "rank": 3
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 6
+  }
+ },
+ "chiba": {
+  "2022": {
+   "league": "J2",
+   "rank": 10
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 6
+  },
+  "2024": {
+   "league": "J2",
+   "rank": 7
+  },
+  "2025": {
+   "league": "J2",
+   "rank": 3
+  }
+ },
+ "mito": {
+  "2022": {
+   "league": "J2",
+   "rank": 13
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 17
+  },
+  "2024": {
+   "league": "J2",
+   "rank": 15
+  },
+  "2025": {
+   "league": "J2",
+   "rank": 1
+  }
+ },
+ "shimizu": {
+  "2022": {
+   "league": "J1",
+   "rank": 17
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 4
+  },
+  "2024": {
+   "league": "J2",
+   "rank": 1
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 14
+  }
+ },
+ "okayama": {
+  "2022": {
+   "league": "J2",
+   "rank": 3
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 10
+  },
+  "2024": {
+   "league": "J2",
+   "rank": 5
+  },
+  "2025": {
+   "league": "J1",
+   "rank": 13
+  }
+ },
+ "nagasaki": {
+  "2022": {
+   "league": "J2",
+   "rank": 11
+  },
+  "2023": {
+   "league": "J2",
+   "rank": 7
+  },
+  "2024": {
+   "league": "J2",
+   "rank": 3
+  },
+  "2025": {
+   "league": "J2",
+   "rank": 2
+  }
+ }
+}
