@@ -169,16 +169,11 @@ export default async function ResultPage({ params, searchParams }) {
                 <span key={i} className="block">{ln}</span>
               ))}
             </h1>
-            <div className="mb-6">
-              <span
-                className="inline-flex items-baseline gap-1 rounded-xl px-4 py-2.5 sm:px-5 sm:py-3 text-white"
-                style={{ backgroundColor: clubColor }}
-              >
-                <span className="dsRB-bignum text-5xl sm:text-6xl font-black tabular-nums leading-none">
-                  <CountUp target={pct(top1.score)} duration={1500} delay={200} />
-                </span>
-                <span className="text-xl sm:text-2xl font-black leading-none">%</span>
+            <div className="flex items-baseline gap-3 mb-5 flex-wrap">
+              <span className="dsRB-bignum text-6xl sm:text-[7rem] font-black tabular-nums leading-none" style={{ color: clubColor }}>
+                <CountUp target={pct(top1.score)} duration={1500} delay={200} />
               </span>
+              <span className="text-sm sm:text-base font-mono tracking-[0.2em] text-zinc-500">% MATCH</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-7">
               <span className="px-3 py-1 text-[10px] sm:text-xs font-mono tracking-[0.15em] text-zinc-600 rounded-full border border-black/15">
