@@ -240,7 +240,7 @@ export default async function ResultPage({ params, searchParams }) {
                 {detail?.stadium?.home_stadium_name ?? top1.club.prefecture} 観戦のついでに。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {sightseeingCards.map(({ title, image, extract }) => {
+                {sightseeingCards.map(({ title, image }) => {
                   const shown = displayTitle(title)
                   return (
                     <a
@@ -248,7 +248,7 @@ export default async function ResultPage({ params, searchParams }) {
                       href={`https://www.jalan.net/kankou/?keyword=${encodeURIComponent(shown)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex flex-col overflow-hidden border border-black/10 hover:border-black rounded-lg bg-white transition-colors"
+                      className="group relative block aspect-[3/4] overflow-hidden rounded-lg bg-zinc-100"
                     >
                       {image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -256,33 +256,26 @@ export default async function ResultPage({ params, searchParams }) {
                           src={image}
                           alt={shown}
                           loading="lazy"
-                          className="w-full aspect-[4/3] object-cover bg-zinc-100 group-hover:scale-[1.03] transition-transform duration-300"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500"
                         />
                       ) : (
                         <div
-                          className="w-full aspect-[4/3] flex items-center justify-center"
-                          style={{
-                            background: `linear-gradient(135deg, ${clubColor}22, ${clubColor}55)`,
-                          }}
-                        >
-                          <span className="text-2xl font-black text-white/70 select-none">
-                            {shown.slice(0, 2)}
-                          </span>
-                        </div>
+                          className="absolute inset-0"
+                          style={{ background: `linear-gradient(135deg, ${clubColor}55, ${clubColor}aa)` }}
+                        />
                       )}
-                      <div className="px-3 sm:px-4 py-2.5 sm:py-3 flex-1">
-                        <p className="text-[10px] font-mono tracking-[0.15em] text-zinc-500 mb-1">
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0) 55%)' }}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 text-white">
+                        <p className="text-[9px] font-mono tracking-[0.15em] opacity-85 mb-1">
                           {top1.club.prefecture}
                         </p>
-                        <p className="text-xs sm:text-sm font-bold leading-snug flex items-center justify-between gap-1.5">
+                        <p className="text-sm sm:text-base font-bold leading-tight flex items-end justify-between gap-1.5">
                           <span className="line-clamp-2">{shown}</span>
-                          <span className="text-zinc-400 group-hover:translate-x-1 transition-transform shrink-0">→</span>
+                          <span className="opacity-80 group-hover:translate-x-0.5 transition-transform shrink-0">→</span>
                         </p>
-                        {extract && (
-                          <p className="hidden sm:block text-[11px] text-zinc-500 mt-1.5 leading-snug line-clamp-2">
-                            {extract}
-                          </p>
-                        )}
                       </div>
                     </a>
                   )
