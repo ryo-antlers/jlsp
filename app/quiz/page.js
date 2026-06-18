@@ -87,12 +87,32 @@ function LikertRow({ qLabel, question, selected, onSelect }) {
   )
 }
 
+// カテゴリが固まらないよう、各カテゴリを全体に均等配置して並べ替える。
+// 各質問の位置キー = (カテゴリ内連番 + 0.5) / カテゴリ件数。これで件数の多い
+// カテゴリ(keiei 等)も末尾に固まらず、似た質問が隣り合いにくくなる。
+function interleaveByCategory(questions) {
+  const groups = new Map()
+  for (const q of questions) {
+    if (!groups.has(q.category)) groups.set(q.category, [])
+    groups.get(q.category).push(q)
+  }
+  const keyed = []
+  for (const [cat, list] of groups) {
+    list.forEach((q, i) => {
+      keyed.push({ q, cat, sortKey: (i + 0.5) / list.length })
+    })
+  }
+  keyed.sort((a, b) => a.sortKey - b.sortKey || a.cat.localeCompare(b.cat))
+  return keyed.map((k) => k.q)
+}
+
 export default function QuizPage() {
   const router = useRouter()
   const pages = useMemo(() => {
+    const ordered = interleaveByCategory(QUESTIONS)
     const out = []
-    for (let i = 0; i < QUESTIONS.length; i += QUESTIONS_PER_PAGE) {
-      out.push(QUESTIONS.slice(i, i + QUESTIONS_PER_PAGE))
+    for (let i = 0; i < ordered.length; i += QUESTIONS_PER_PAGE) {
+      out.push(ordered.slice(i, i + QUESTIONS_PER_PAGE))
     }
     return out
   }, [])
