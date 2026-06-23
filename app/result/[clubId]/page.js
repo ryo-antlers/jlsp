@@ -326,7 +326,7 @@ export default async function ResultPage({ params, searchParams }) {
           {/* 現在所属の有名選手 (admin手入力) */}
           {clubMeta.currentPlayers?.length > 0 && (
             <div className="dsRB-fade border-t border-black/10 pt-5" style={{ '--d': '0.28s' }}>
-              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">現在の有名選手</p>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 mb-3">現在所属している有名選手</p>
               <ul className="space-y-2">
                 {clubMeta.currentPlayers.map((name) => (
                   <li key={name} className="text-sm font-bold leading-tight">{name}</li>
