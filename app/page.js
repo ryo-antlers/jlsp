@@ -10,13 +10,9 @@ export default function Home() {
           <span className="jlsp-letter">S</span>
           <span className="jlsp-letter">P</span>
         </p>
-        <h1 className="text-3xl sm:text-5xl font-black leading-[1.25] mb-6 tracking-tight">
+        <h1 className="text-3xl sm:text-5xl font-black leading-[1.25] mb-10 tracking-tight">
           <span className="club-color-cycle">あなたのクラブ</span>を<br className="sm:hidden" />見つける
         </h1>
-        <p className="text-sm sm:text-base text-[var(--muted)] mb-10 leading-relaxed">
-          W杯や海外サッカーで目覚めたサッカー熱、<br className="hidden sm:inline" />
-          次は J リーグでも。
-        </p>
         <Link href="/quiz" className="cta-button">
           診断する
         </Link>
