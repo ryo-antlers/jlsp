@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "JLSP — Jリーグ クラブ相性診断",
-  description: "32問の質問からあなたに合うJリーグクラブ TOP3 を診断します。",
+  description: "37問の質問からあなたに合うJリーグクラブを診断します。",
 };
 
 export default function RootLayout({ children }) {
@@ -22,7 +23,10 @@ export default function RootLayout({ children }) {
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
