@@ -13,9 +13,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_TITLE = "JLSP — Jリーグ クラブ相性診断";
+const SITE_DESC =
+  "高まったサッカー熱、次はJリーグで。価値観や好みから、あなたが本当に好きになるクラブを診断します。";
+
 export const metadata = {
-  title: "JLSP — Jリーグ クラブ相性診断",
-  description: "37問の質問からあなたに合うJリーグクラブを診断します。",
+  metadataBase: new URL("https://jlsp.jleakstats.com"),
+  title: SITE_TITLE,
+  description: SITE_DESC,
+  openGraph: {
+    type: "website",
+    siteName: "JLSP",
+    title: SITE_TITLE,
+    description: SITE_DESC,
+    // og:image は app/opengraph-image.(png|jpg) を置けば自動で配線される
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESC,
+  },
 };
 
 export default function RootLayout({ children }) {
