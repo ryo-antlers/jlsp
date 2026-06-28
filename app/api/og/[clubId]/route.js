@@ -23,11 +23,32 @@ export async function GET(req, { params }) {
   const chip = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)'
   const rule = isLight ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.25)'
 
-  // 画像に出る全文字（日本語＋英数）を渡してサブセットフォントを取得。
   const text = `JLSP·あなたの相性クラブはMATCH%Jリーグ クラブ相性診断jlsp.jleakstats.com0123456789${club.name}${club.region}${club.prefecture}${club.division}`
   const jp = await loadJpFont(text)
   const fonts = jp ? [{ name: 'NotoSansJP', data: jp, style: 'normal', weight: 800 }] : undefined
   const ff = jp ? 'NotoSansJP' : 'sans-serif'
+
+  const pctNode =
+    pct != null ? (
+      <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+        <div style={{ fontSize: 220, fontWeight: 800, lineHeight: 1, letterSpacing: -6 }}>
+          {String(pct)}
+        </div>
+        <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1, paddingBottom: 16 }}>%</div>
+        <div
+          style={{
+            fontSize: 60,
+            fontWeight: 800,
+            letterSpacing: 8,
+            opacity: 0.92,
+            paddingBottom: 30,
+            paddingLeft: 28,
+          }}
+        >
+          MATCH
+        </div>
+      </div>
+    ) : null
 
   return new ImageResponse(
     (
@@ -44,45 +65,19 @@ export async function GET(req, { params }) {
           fontFamily: ff,
         }}
       >
-        {/* 上: ブランド + リード文 */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex' }}>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: 6, opacity: 0.9 }}>
             JLSP · あなたの相性クラブは
           </div>
         </div>
 
-        {/* 中: 相性% を主役に */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {pct != null && (
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <div style={{ fontSize: 220, fontWeight: 800, lineHeight: 1, letterSpacing: -6 }}>{pct}</div>
-              <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1, paddingBottom: 16 }}>%</div>
-              <div
-                style={{
-                  fontSize: 60,
-                  fontWeight: 800,
-                  letterSpacing: 8,
-                  opacity: 0.92,
-                  paddingBottom: 30,
-                  paddingLeft: 28,
-                }}
-              >
-                MATCH
-              </div>
-            </div>
-          )}
-          <div
-            style={{
-              fontSize: 92,
-              fontWeight: 800,
-              letterSpacing: -2,
-              marginTop: pct != null ? 6 : 0,
-            }}
-          >
+          {pctNode}
+          <div style={{ fontSize: 92, fontWeight: 800, letterSpacing: -2, marginTop: 6 }}>
             {club.name}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', marginTop: 22 }}>
-            <span
+            <div
               style={{
                 fontSize: 26,
                 fontWeight: 800,
@@ -92,14 +87,13 @@ export async function GET(req, { params }) {
               }}
             >
               {club.division}
-            </span>
-            <span style={{ fontSize: 26, fontWeight: 700, opacity: 0.9, marginLeft: 18 }}>
-              {club.region}・{club.prefecture}
-            </span>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 700, opacity: 0.9, marginLeft: 18 }}>
+              {`${club.region}・${club.prefecture}`}
+            </div>
           </div>
         </div>
 
-        {/* 下: フッター */}
         <div
           style={{
             display: 'flex',
@@ -113,8 +107,8 @@ export async function GET(req, { params }) {
             paddingTop: 22,
           }}
         >
-          <span>Jリーグ クラブ相性診断</span>
-          <span>jlsp.jleakstats.com</span>
+          <div>Jリーグ クラブ相性診断</div>
+          <div>jlsp.jleakstats.com</div>
         </div>
       </div>
     ),
@@ -128,12 +122,11 @@ async function loadJpFont(text) {
     const cssUrl = `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@800&text=${encodeURIComponent(
       text,
     )}`
-    // 古い UA を送ると Google が woff2 ではなく ttf を返す（Satori は ttf/otf/woff のみ対応）。
+    // 古い UA を送ると Google が woff2 ではなく woff/ttf を返す（Satori は woff/ttf/otf 対応）。
     const css = await (
       await fetch(cssUrl, {
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; rv:10.0) Gecko/20100101 Firefox/10.0',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:10.0) Gecko/20100101 Firefox/10.0',
         },
       })
     ).text()
