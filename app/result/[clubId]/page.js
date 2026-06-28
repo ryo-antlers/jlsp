@@ -6,7 +6,7 @@ import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // �
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import { getClubExtra } from '@/lib/jlsp/club-extra'
-import { jalanStayLink, jalanKankouLink, prefShort } from '@/lib/jlsp/affiliate'
+import { jalanStayLink, jalanKankouLink, stayAreaLabel } from '@/lib/jlsp/affiliate'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -121,9 +121,9 @@ export default async function ResultPage({ params, searchParams }) {
       ? `${lat},${lng}`
       : null
   const mapsUrl = mapQuery ? `https://www.google.com/maps?q=${mapQuery}` : null
-  // 観戦遠征アフィリ: 本拠地都道府県の宿検索（じゃらん）。未提携/県不明なら null。
-  const stayUrl = jalanStayLink(top1.club.prefecture)
-  const prefName = prefShort(top1.club.prefecture)
+  // 観戦遠征アフィリ: スタジアム所在地の宿検索（じゃらん）。未提携/不明なら null。
+  const stayUrl = jalanStayLink(top1.club.id, top1.club.prefecture)
+  const stayArea = stayAreaLabel(top1.club.id, top1.club.prefecture)
   const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
   return (
@@ -265,7 +265,7 @@ export default async function ResultPage({ params, searchParams }) {
                     className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-zinc-50 px-4 py-3 hover:border-[#0e0e10]/40 transition-colors"
                   >
                     <span className="text-sm font-bold text-[#0e0e10]">
-                      🏨 {prefName}で観戦の宿・ホテルを探す
+                      🏨 {stayArea}で観戦の宿・ホテルを探す
                     </span>
                     <span className="text-[10px] font-mono tracking-wider text-zinc-400 shrink-0">
                       じゃらん net ›
