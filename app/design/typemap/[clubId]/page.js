@@ -5,6 +5,9 @@ import { AXES } from '@/lib/jlsp/axes'
 
 export const dynamic = 'force-dynamic'
 
+// 廃止した性格タイプの社内プレビュー。検索インデックス除外。
+export const metadata = { robots: { index: false, follow: false } }
+
 const VARIANTS = [
   { id: 'A', name: 'Radar (現状)', desc: '4スポーク・蜘蛛の巣型ポリゴン。MBTI 系定番' },
   { id: 'B', name: 'Parallel Coordinates', desc: '4 本の垂直軸を線で繋ぐ。Bloomberg 風データ可視化' },

@@ -288,6 +288,11 @@ export default async function ResultPage({ params, searchParams }) {
                     </span>
                   </a>
                 )}
+                {(stayUrl || rentacarUrl) && (
+                  <p className="text-[10px] leading-relaxed text-zinc-400">
+                    ※ 宿・レンタカー・観光スポットのリンクは広告（アフィリエイトプログラム）を含みます。
+                  </p>
+                )}
               </div>
             </section>
           )}
