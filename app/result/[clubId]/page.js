@@ -64,20 +64,22 @@ export async function generateMetadata({ params, searchParams }) {
   const data = await loadResultData({ clubId, a })
   if (!data) return { title: '結果が見つかりません — JLSP' }
   const { top1 } = data
-  const title = `あなたの推しクラブは「${top1.club.name}」 — JLSP`
+  const p = pct(top1.score)
+  const title = `あなたの相性クラブは「${top1.club.name}」(相性${p}%) — JLSP`
+  const ogImage = `/api/og/${top1.club.id}?p=${p}`
   return {
     title,
     description: top1.club.description,
     openGraph: {
       title,
       description: top1.club.description,
-      images: [`/api/og/${top1.club.id}`],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description: top1.club.description,
-      images: [`/api/og/${top1.club.id}`],
+      images: [ogImage],
     },
   }
 }
