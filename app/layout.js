@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -25,6 +26,14 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <footer className="mt-auto border-t border-[var(--border)] py-6 px-5">
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-between gap-2 text-[10px] text-[var(--muted)]">
+            <span>© JLSP — 非公式のJリーグ クラブ相性診断</span>
+            <Link href="/privacy" className="underline hover:text-[var(--foreground)]">
+              プライバシーポリシー・運営者情報
+            </Link>
+          </div>
+        </footer>
         <Analytics />
       </body>
     </html>
