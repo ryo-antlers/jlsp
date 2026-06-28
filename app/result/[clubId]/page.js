@@ -6,7 +6,7 @@ import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // �
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import { getClubExtra } from '@/lib/jlsp/club-extra'
-import { jalanStayLink, jalanKankouLink, stayAreaLabel } from '@/lib/jlsp/affiliate'
+import { jalanStayLink, jalanKankouLink, jalanRentacarLink, yahooShoppingLink, stayAreaLabel, prefShort } from '@/lib/jlsp/affiliate'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -124,6 +124,8 @@ export default async function ResultPage({ params, searchParams }) {
   // 観戦遠征アフィリ: スタジアム所在地の宿検索（じゃらん）。未提携/不明なら null。
   const stayUrl = jalanStayLink(top1.club.id, top1.club.prefecture)
   const stayArea = stayAreaLabel(top1.club.id, top1.club.prefecture)
+  const rentacarUrl = jalanRentacarLink(top1.club.id) // 本拠地県のレンタカー（じゃらん）
+  const goodsUrl = yahooShoppingLink(`${top1.club.name} グッズ`) // クラブグッズ（Yahoo!ショッピング）
   const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
   return (
@@ -215,6 +217,17 @@ export default async function ResultPage({ params, searchParams }) {
             <p className="text-base sm:text-lg leading-[1.85] text-[#0e0e10] font-medium">
               {description}
             </p>
+            {goodsUrl && (
+              <a
+                href={goodsUrl}
+                target="_blank"
+                rel="sponsored noopener noreferrer"
+                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white transition-opacity hover:opacity-85"
+                style={{ backgroundColor: clubColor }}
+              >
+                🛍 {top1.club.name}のグッズを見る
+              </a>
+            )}
           </section>
 
           {/* STADIUM */}
@@ -269,6 +282,21 @@ export default async function ResultPage({ params, searchParams }) {
                     </span>
                     <span className="text-[10px] font-mono tracking-wider text-zinc-400 shrink-0">
                       じゃらん net ›
+                    </span>
+                  </a>
+                )}
+                {rentacarUrl && (
+                  <a
+                    href={rentacarUrl}
+                    target="_blank"
+                    rel="sponsored noopener noreferrer"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-zinc-50 px-4 py-3 hover:border-[#0e0e10]/40 transition-colors"
+                  >
+                    <span className="text-sm font-bold text-[#0e0e10]">
+                      🚗 {prefShort(top1.club.prefecture)}でレンタカーを探す
+                    </span>
+                    <span className="text-[10px] font-mono tracking-wider text-zinc-400 shrink-0">
+                      じゃらん ›
                     </span>
                   </a>
                 )}
