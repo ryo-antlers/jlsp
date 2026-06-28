@@ -6,7 +6,7 @@ import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // �
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import { getClubExtra } from '@/lib/jlsp/club-extra'
-import { jalanStayLink, jalanKankouLink, jalanRentacarLink, yahooShoppingLink, stayAreaLabel, prefShort } from '@/lib/jlsp/affiliate'
+import { jalanStayLink, jalanKankouLink, jalanRentacarLink, stayAreaLabel, prefShort } from '@/lib/jlsp/affiliate'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -125,7 +125,6 @@ export default async function ResultPage({ params, searchParams }) {
   const stayUrl = jalanStayLink(top1.club.id, top1.club.prefecture)
   const stayArea = stayAreaLabel(top1.club.id, top1.club.prefecture)
   const rentacarUrl = jalanRentacarLink(top1.club.id) // 本拠地県のレンタカー（じゃらん）
-  const goodsUrl = yahooShoppingLink(`${top1.club.name} グッズ`) // クラブグッズ（Yahoo!ショッピング）
   const hasOfficial = clubMeta.official && Object.values(clubMeta.official).some(Boolean)
 
   return (
@@ -217,17 +216,6 @@ export default async function ResultPage({ params, searchParams }) {
             <p className="text-base sm:text-lg leading-[1.85] text-[#0e0e10] font-medium">
               {description}
             </p>
-            {goodsUrl && (
-              <a
-                href={goodsUrl}
-                target="_blank"
-                rel="sponsored noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white transition-opacity hover:opacity-85"
-                style={{ backgroundColor: clubColor }}
-              >
-                🛍 {top1.club.name}のグッズを見る
-              </a>
-            )}
           </section>
 
           {/* STADIUM */}
