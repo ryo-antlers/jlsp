@@ -55,10 +55,8 @@ export async function GET(req, { params }) {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {pct != null && (
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <div style={{ fontSize: 220, fontWeight: 800, lineHeight: 1, letterSpacing: -6 }}>
-                {pct}
-                <span style={{ fontSize: 120 }}>%</span>
-              </div>
+              <div style={{ fontSize: 220, fontWeight: 800, lineHeight: 1, letterSpacing: -6 }}>{pct}</div>
+              <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1, paddingBottom: 16 }}>%</div>
               <div
                 style={{
                   fontSize: 60,
@@ -130,7 +128,15 @@ async function loadJpFont(text) {
     const cssUrl = `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@800&text=${encodeURIComponent(
       text,
     )}`
-    const css = await (await fetch(cssUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })).text()
+    // 古い UA を送ると Google が woff2 ではなく ttf を返す（Satori は ttf/otf/woff のみ対応）。
+    const css = await (
+      await fetch(cssUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; rv:10.0) Gecko/20100101 Firefox/10.0',
+        },
+      })
+    ).text()
     const m = css.match(/src:\s*url\((.+?)\)\s*format/)
     if (!m) return null
     const res = await fetch(m[1])
