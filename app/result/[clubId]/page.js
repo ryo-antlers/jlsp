@@ -187,7 +187,6 @@ export default async function ResultPage({ params, searchParams }) {
             teamId={teamId}
             clubColor={clubColor}
             ticketUrl={clubMeta.ticketUrl}
-            winnerUrl={WINNER_URL}
           />
         </aside>
 
@@ -479,12 +478,20 @@ export default async function ResultPage({ params, searchParams }) {
                 sub={`${top1.club.name} の試合チケット`}
               />
             )}
-            <ExternalLink
-              href="https://store.toto-dream.com/dcs/subos/screen/pi31/spin049/PGSPIN04901InitWinnerTop.form?channelId=03"
-              label="WINNER"
-              sub="J リーグを予想して当てる"
-            />
+            {WINNER_URL && (
+              <ExternalLink
+                href={WINNER_URL}
+                label="WINNER"
+                sub="J リーグを予想して当てる"
+                sponsored
+              />
+            )}
           </div>
+          {WINNER_URL && (
+            <p className="text-[10px] leading-relaxed text-zinc-400 mt-4">
+              ※ WINNER のリンクは広告（アフィリエイトプログラム）です。
+            </p>
+          )}
         </div>
       </div>
 
@@ -518,7 +525,7 @@ export default async function ResultPage({ params, searchParams }) {
  * クラブカラーの帯と大きな順位、前節からの delta、得失点、直近5の勝敗を一枚にまとめる。
  */
 /** 開幕戦などの予定。DB の upcomingMatches を優先、無ければ手入力 manual を表示。 */
-function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl, winnerUrl }) {
+function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
   const hasDb = dbMatches?.length > 0
   const hasManual = manual?.length > 0
   if (!hasDb && !hasManual) return null
@@ -556,22 +563,6 @@ function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl, winnerUr
         >
           Jリーグチケット で買う →
         </a>
-      )}
-      {winnerUrl && (
-        <a
-          href={winnerUrl}
-          target="_blank"
-          rel="sponsored noopener noreferrer"
-          className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-zinc-50 px-4 py-3 hover:border-[#0e0e10]/40 transition-colors"
-        >
-          <span className="text-sm font-bold text-[#0e0e10]">⚽ 試合結果を予想する</span>
-          <span className="text-[10px] font-mono tracking-wider text-zinc-400 shrink-0">WINNER ›</span>
-        </a>
-      )}
-      {winnerUrl && (
-        <p className="text-[10px] leading-relaxed text-zinc-400">
-          ※ WINNER のリンクは広告（アフィリエイトプログラム）です。
-        </p>
       )}
     </div>
   )
@@ -616,12 +607,12 @@ function OfficialRow({ href, label, clubColor }) {
   )
 }
 
-function ExternalLink({ href, label, sub }) {
+function ExternalLink({ href, label, sub, sponsored }) {
   return (
     <a
       href={href}
       target="_blank"
-      rel="noopener noreferrer"
+      rel={sponsored ? 'sponsored noopener noreferrer' : 'noopener noreferrer'}
       className="block border border-black/10 hover:border-black px-5 py-4 rounded-lg bg-white transition-colors group"
     >
       <p className="text-sm sm:text-base font-black mb-1 flex items-center justify-between">
