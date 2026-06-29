@@ -6,7 +6,7 @@ import { NOTABLE_ALUMNI, OVERSEAS_PLAYERS } from '@/lib/jlsp/club-players' // �
 import { SIGHTSEEING_SPOTS } from '@/lib/jlsp/sightseeing-spots'
 import { getWikiThumbnails } from '@/lib/jlsp/wiki-image'
 import { getClubExtra } from '@/lib/jlsp/club-extra'
-import { jalanStayLink, jalanKankouLink, jalanRentacarLink, stayAreaLabel, prefShort } from '@/lib/jlsp/affiliate'
+import { jalanStayLink, jalanKankouLink, jalanRentacarLink, stayAreaLabel, prefShort, WINNER_URL } from '@/lib/jlsp/affiliate'
 import ShareButtons from './ShareButtons'
 import CountUp from './CountUp'
 
@@ -187,6 +187,7 @@ export default async function ResultPage({ params, searchParams }) {
             teamId={teamId}
             clubColor={clubColor}
             ticketUrl={clubMeta.ticketUrl}
+            winnerUrl={WINNER_URL}
           />
         </aside>
 
@@ -517,7 +518,7 @@ export default async function ResultPage({ params, searchParams }) {
  * クラブカラーの帯と大きな順位、前節からの delta、得失点、直近5の勝敗を一枚にまとめる。
  */
 /** 開幕戦などの予定。DB の upcomingMatches を優先、無ければ手入力 manual を表示。 */
-function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
+function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl, winnerUrl }) {
   const hasDb = dbMatches?.length > 0
   const hasManual = manual?.length > 0
   if (!hasDb && !hasManual) return null
@@ -555,6 +556,22 @@ function NextMatches({ dbMatches, manual, teamId, clubColor, ticketUrl }) {
         >
           Jリーグチケット で買う →
         </a>
+      )}
+      {winnerUrl && (
+        <a
+          href={winnerUrl}
+          target="_blank"
+          rel="sponsored noopener noreferrer"
+          className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-zinc-50 px-4 py-3 hover:border-[#0e0e10]/40 transition-colors"
+        >
+          <span className="text-sm font-bold text-[#0e0e10]">⚽ 試合結果を予想する</span>
+          <span className="text-[10px] font-mono tracking-wider text-zinc-400 shrink-0">WINNER ›</span>
+        </a>
+      )}
+      {winnerUrl && (
+        <p className="text-[10px] leading-relaxed text-zinc-400">
+          ※ WINNER のリンクは広告（アフィリエイトプログラム）です。
+        </p>
       )}
     </div>
   )
